@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="f5uELO" name="NeuralPiRpc" projectType="guiapp" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
+  <MAINGROUP id="OZ1SRz" name="NeuralPiRpc">
+    <GROUP id="{B651BDC6-4D88-3102-26C5-E4D8EB538034}" name="Resources">
+      <FILE id="Vb4rw1" name="npi_background.jpg" compile="0" resource="1"
+            file="resources/npi_background.jpg"/>
+    </GROUP>
+    <GROUP id="{7BE8E43A-9129-ABE8-0D0F-209230AB7A2A}" name="Source">
+      <FILE id="eMsqd2" name="SimpleOscMsg.cpp" compile="1" resource="0"
+            file="Source/SimpleOscMsg.cpp"/>
+      <FILE id="jA0UhW" name="SimpleOscMsg.h" compile="0" resource="0" file="Source/SimpleOscMsg.h"/>
+      <FILE id="Qec6oV" name="ElapsedTimer.h" compile="0" resource="0" file="Source/ElapsedTimer.h"/>
+      <FILE id="n9NIMk" name="NeuralPiProto.h" compile="0" resource="0" file="Source/NeuralPiProto.h"/>
+      <FILE id="je9EcL" name="UdpSender.h" compile="0" resource="0" file="Source/UdpSender.h"/>
+      <FILE id="n2HxIU" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="blpMQZ" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+      <FILE id="Sczcxz" name="MainComponent.cpp" compile="1" resource="0"
+            file="Source/MainComponent.cpp"/>
+    </GROUP>
+  </MAINGROUP>
+  <MODULES>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_osc" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
+  <EXPORTFORMATS>
+    <ANDROIDSTUDIO targetFolder="Builds/Android">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="NeuralPiRpc"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="NeuralPiRpc"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_core" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_osc" path="../../../Software/devtools/JUCE/modules"/>
+      </MODULEPATHS>
+    </ANDROIDSTUDIO>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="NeuralPiRpc"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="NeuralPiRpc"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_core" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_osc" path="../../../Software/devtools/JUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <VS2019 targetFolder="Builds/VisualStudio2019">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="NeuralPiRpc"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="NeuralPiRpc"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_core" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_osc" path="../../../Software/devtools/JUCE/modules"/>
+      </MODULEPATHS>
+    </VS2019>
+  </EXPORTFORMATS>
+</JUCERPROJECT>
