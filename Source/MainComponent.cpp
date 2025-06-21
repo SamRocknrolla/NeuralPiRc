@@ -643,9 +643,10 @@ void MainComponent::resized()
 //    inPortNumberLabel.setBounds(15, 425, 150, 25);
 //    inPortNumberField.setBounds(160, 425, 75, 25);
 
-    connectButton.setBounds(15, 365, 150, 25);
-    scanButton.setBounds(165, 365, 75, 25);
-    ipCbox.setBounds(15, 395, 225, 25);
+    ipCbox.setBounds(15, 365, 270, 25);
+    scanButton.setBounds(285, 365, 50, 25);
+
+    connectButton.setBounds(15, 395, 320, 25);
 
 }
 
@@ -961,8 +962,15 @@ void MainComponent::addModelItem(int id, String itemValue, int itemIndex) {
 
 void MainComponent::onStateChanged(IUdpListener::EState prevState, IUdpListener::EState state) {
     switch (state) {
+    case IUdpListener::EState::Disconnecting:
     case IUdpListener::EState::Error:
     case IUdpListener::EState::Idle:
+        for (ComboBox* cbox : m_modelCbox) {
+            cbox->clear(true);
+        }
+        for (Slider* slider : m_knobSlider) {
+            slider->setValue(0.0f);
+        }
         connectButton.setEnabled(ipCbox.getNumItems() != 0);
         connectButton.setButtonText("Connect");
         scanButton.setEnabled(true);

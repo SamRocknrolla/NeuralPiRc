@@ -54,8 +54,8 @@ public:
         , m_udpTxSocket(true)
         , m_listener(listener)
         , m_state(IUdpListener::EState::Idle)
-        , m_sessionId(NpRpcMsgHelper::NPRPC_INV_SESS_ID)
-        , m_sessionTs(NpRpcMsgHelper::NPRPC_INV_SESS_TS)
+        , m_sessionId(NpRpcProto::NPRPC_INV_SESS_ID)
+        , m_sessionTs(NpRpcProto::NPRPC_INV_SESS_TS)
         , m_hbState(EHbState::Idle)
         , m_hbMissedCount(0)
     {
@@ -100,45 +100,56 @@ public:
 
                 if (bytesRead > 0)
                 {
-                    // Parse the UDP packet
+                    // Parse the UDP packet and check header
                     SimpleOscMsg msg;
-                    if (msg.DeserializeFrom(buffer, bytesRead)) {
-                        // Check protocol ID and protocol version
-                        if (msg.size() >= 3 &&
-                            msg[0].isInt32() && msg[0].getInt32() == NpRpcMsgHelper::NPRPC_VER &&
-                            msg[2].isInt32() && msg[2].getInt32() >= (uint32_t)NpRpcMsgHelper::EPacketType::ConnectReq &&
-                            msg[2].isInt32() && msg[2].getInt32() <= (uint32_t)NpRpcMsgHelper::EPacketType::BroadcastReq) {
+                    if (msg.DeserializeFrom(buffer, bytesRead) && msg.size() >= 3 && 
+                        msg[NpRpcProto::EHeader_Version].isInt32() &&
+                        msg[NpRpcProto::EHeader_SessionId].isInt32() &&
+                        msg[NpRpcProto::EHeader_Type].isInt32()) {
+                        // Check protocol Version and Type
+                        int32 _version = msg[NpRpcProto::EHeader_Version].getInt32();
+                        int32 _sessionId = msg[NpRpcProto::EHeader_SessionId].getInt32();
+                        NpRpcProto::EPacketType _type = static_cast<NpRpcProto::EPacketType>(msg[NpRpcProto::EHeader_Type].getInt32());
+
+                        if (_version == NpRpcProto::NPRPC_VER &&
+                            _type >= NpRpcProto::EPacketType::ConnectReq &&
+                            _type <= NpRpcProto::EPacketType::BroadcastReq) {
 
                             // process broadcast response
-                            if (msg.getAddress() == NpRpcMsgHelper::NRPC_BCAST_CH &&
-                                msg[1].isInt32() && msg[1].getInt32() == NpRpcMsgHelper::NPRPC_INV_SESS_ID &&
-                                msg[2].getInt32() == (uint32_t)NpRpcMsgHelper::EPacketType::BroadcastRes) {
+                            if (msg.getAddress() == NpRpcProto::NRPC_BCAST_CH &&
+                                _sessionId == NpRpcProto::NPRPC_INV_SESS_ID &&
+                                _type == NpRpcProto::EPacketType::BroadcastRes) {
+
                                 juce::MessageManager::callAsync([&updater = m_listener, resIpStr]() {
                                     updater.onBrReceived(resIpStr);
                                     });
                             }
                             // process OCR /NpRps/connect
-                            else if (msg.getAddress() == NpRpcMsgHelper::NRPC_CONNECT_CH &&
-                                     msg[1].isInt32() && msg[1].getInt32() != NpRpcMsgHelper::NPRPC_INV_SESS_ID) {
+                            else if (msg.getAddress() == NpRpcProto::NRPC_CONNECT_CH &&
+                                     _sessionId != NpRpcProto::NPRPC_INV_SESS_ID) {
 
-                                switch (static_cast<NpRpcMsgHelper::EPacketType>(msg[2].getInt32())) {
-                                case NpRpcMsgHelper::EPacketType::AddModelMsg:
-                                    if (msg[3].isInt32() && msg[4].isInt32() && msg[5].isString()) {
+                                switch (_type) {
+                                case NpRpcProto::EPacketType::AddModelMsg:
+                                    if (msg[NpRpcProto::EAddModelMsg_ModelId].isInt32() && 
+                                        msg[NpRpcProto::EAddModelMsg_ItemIndex].isInt32() && 
+                                        msg[NpRpcProto::EAddModelMsg_ItemText].isString()) {
                                         // Thread-safe UI update
                                         juce::MessageManager::callAsync([&updater = m_listener, msg]() {
-                                            updater.addModelItem(msg[3].getInt32(), msg[5].getString(), msg[4].getInt32());
+                                            updater.addModelItem(msg[NpRpcProto::EAddModelMsg_ModelId].getInt32(),
+                                                                 msg[NpRpcProto::EAddModelMsg_ItemText].getString(), 
+                                                                 msg[NpRpcProto::EAddModelMsg_ItemIndex].getInt32());
                                             });
                                         break;
                                     }
-                                case NpRpcMsgHelper::EPacketType::ConnectRes:
-                                    m_sessionId = msg[1].getInt32();
+                                case NpRpcProto::EPacketType::ConnectRes:
+                                    m_sessionId = _sessionId;
                                     m_sessionTs = Time::getMillisecondCounter();
 
                                     setState(IUdpListener::EState::Connected);
                                     m_hbMissedCount = 0;
                                     setHbState(EHbState::Ready);
                                     break;
-                                case NpRpcMsgHelper::EPacketType::HeartbeatRes:
+                                case NpRpcProto::EPacketType::HeartbeatRes:
                                     if (m_state.get() == IUdpListener::EState::Connected) {
                                         m_hbMissedCount = 0;
                                         setHbState(EHbState::Ready);
@@ -149,23 +160,25 @@ public:
                                 }
                             }
                             // process OCR /NpRps/knob
-                            else if (msg.getAddress() == NpRpcMsgHelper::NRPC_KNOB_CH &&
-                                msg[1].isInt32() && msg[1].getInt32() != NpRpcMsgHelper::NPRPC_INV_SESS_ID &&
-                                (m_sessionId == NpRpcMsgHelper::NPRPC_INV_SESS_ID || msg[1].getInt32() == m_sessionId) &&
-                                msg[2].getInt32() == (uint32_t)NpRpcMsgHelper::EPacketType::UpdateKnobMsg) {
+                            else if (msg.getAddress() == NpRpcProto::NRPC_KNOB_CH &&
+                                _sessionId != NpRpcProto::NPRPC_INV_SESS_ID &&
+                                (m_sessionId == NpRpcProto::NPRPC_INV_SESS_ID || _sessionId == m_sessionId) &&
+                                _type == NpRpcProto::EPacketType::UpdateKnobMsg) {
 
                                 juce::MessageManager::callAsync([&updater = m_listener, msg]() {
-                                    updater.updateKnob(msg[3].getInt32(), msg[4].getFloat32());
+                                    updater.updateKnob(msg[NpRpcProto::EUpdateKnobMsg_KnobId].getInt32(), 
+                                                       msg[NpRpcProto::EUpdateKnobMsg_KnobValue].getFloat32());
                                     });
                             }
                             // process OCR /NpRps/model
-                            else if (msg.getAddress() == NpRpcMsgHelper::NRPC_MODEL_CH &&
-                                msg[1].isInt32() && msg[1].getInt32() != NpRpcMsgHelper::NPRPC_INV_SESS_ID &&
-                                (m_sessionId == NpRpcMsgHelper::NPRPC_INV_SESS_ID || msg[1].getInt32() == m_sessionId) &&
-                                msg[2].getInt32() == (uint32_t)NpRpcMsgHelper::EPacketType::SelectModelMsg ) {
+                            else if (msg.getAddress() == NpRpcProto::NRPC_MODEL_CH &&
+                                _sessionId != NpRpcProto::NPRPC_INV_SESS_ID &&
+                                (m_sessionId == NpRpcProto::NPRPC_INV_SESS_ID || _sessionId == m_sessionId) &&
+                                _type == NpRpcProto::EPacketType::SelectModelMsg ) {
 
                                 juce::MessageManager::callAsync([&updater = m_listener, msg]() {
-                                    updater.updateModelIndex(msg[3].getInt32(), msg[4].getInt32());
+                                    updater.updateModelIndex(msg[NpRpcProto::ESelectModel_ModelId].getInt32(),
+                                                             msg[NpRpcProto::ESelectModel_ItemIndex].getInt32());
                                     });
                             }
                         }
@@ -207,11 +220,11 @@ public:
     }
 
     void updateKnob(int32_t id, float val) {
-        sendUdp(NpRpcMsgHelper::genUpdateKnobMsg(m_sessionId, id, val));
+        sendUdp(NpRpcProto::genUpdateKnobMsg(m_sessionId, id, val));
     }
 
     void selectModel(int32_t id, int32_t itemId) {
-        sendUdp(NpRpcMsgHelper::genSelectModelMsg(m_sessionId, id, itemId));
+        sendUdp(NpRpcProto::genSelectModelMsg(m_sessionId, id, itemId));
     }
 
 private:
@@ -295,7 +308,7 @@ private:
         {
             // Send broadcast message without TX queue
             juce::MemoryBlock buf;
-            NpRpcMsgHelper::genBroadcastReq().SerializeTo(buf);
+            NpRpcProto::genBroadcastReq().SerializeTo(buf);
             m_udpTxSocket.write(m_mcastAddr, m_txPort, buf.getData(), buf.getSize());
 
             setState(IUdpListener::EState::Scanning);
@@ -312,7 +325,7 @@ private:
         }
         case IUdpListener::EState::ReqConnect:
             {
-                sendUdp(NpRpcMsgHelper::genConnectReq());
+                sendUdp(NpRpcProto::genConnectReq());
                 m_reqTimer.start(CFG_TIMEOUT_MS);
                 setState(IUdpListener::EState::Connecting);
             }
@@ -328,12 +341,12 @@ private:
         case IUdpListener::EState::Disconnecting:
             {
                 juce::MemoryBlock buf;
-                NpRpcMsgHelper::genAbortReq(m_sessionId).SerializeTo(buf);
+                NpRpcProto::genAbortReq(m_sessionId).SerializeTo(buf);
                 m_udpTxSocket.write(m_mcastAddr, m_txPort, buf.getData(), buf.getSize());
             }
         case IUdpListener::EState::Error:
-            m_sessionId = NpRpcMsgHelper::NPRPC_INV_SESS_ID;
-            m_sessionTs = NpRpcMsgHelper::NPRPC_INV_SESS_TS;
+            m_sessionId = NpRpcProto::NPRPC_INV_SESS_ID;
+            m_sessionTs = NpRpcProto::NPRPC_INV_SESS_TS;
 //            {
 //                const juce::ScopedLock lock(m_mcastTxLock);
 //                m_mcastTxQueue.clear();
@@ -369,7 +382,7 @@ private:
         switch (m_hbState.get()) {
         case EHbState::Ready:
             {
-                sendUdp(NpRpcMsgHelper::genHeartbeatReq(m_sessionId, Time::getMillisecondCounter() - m_sessionTs));
+                sendUdp(NpRpcProto::genHeartbeatReq(m_sessionId, Time::getMillisecondCounter() - m_sessionTs));
                 m_hbTimer.start(HEARTBEAT_PERIOD_MS);
                 setHbState(EHbState::Wait);
             }

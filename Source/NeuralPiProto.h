@@ -7,7 +7,7 @@
 using namespace juce;
 
 
-class NpRpcMsgHelper {
+class NpRpcProto {
 public:
     static const juce::int32 NPRPC_VER{ 0x77770001 };
     static const juce::int32 NPRPC_INV_SESS_ID{ -1 };
@@ -28,6 +28,40 @@ public:
         , BroadcastRes   = 0xFE
     };
 
+    enum EHeader
+    {
+          EHeader_Version = 0
+        , EHeader_SessionId = 1
+        , EHeader_Type = 2
+    };
+
+    enum HeartbeatReq
+    {
+        HeartbeatReq_SessTimeMs = 3
+    };
+
+    enum EHeartbeatRes
+    {
+        EHeartbeatRes_Counter = 3
+    };
+
+    enum EAddModelMsg
+    {
+        EAddModelMsg_ModelId = 3
+        , EAddModelMsg_ItemIndex = 4
+        , EAddModelMsg_ItemText = 5
+    };
+
+    enum EUpdateKnobMsg {
+        EUpdateKnobMsg_KnobId = 3
+        , EUpdateKnobMsg_KnobValue = 4
+    };
+
+    enum ESelectModel {
+        ESelectModel_ModelId = 3
+        , ESelectModel_ItemIndex = 4
+    };
+
     inline static const juce::String NRPC_BCAST_CH   = "/NpRpc/bcast";
     inline static const juce::String NRPC_CONNECT_CH = "/NpRpc/connect";
     inline static const juce::String NRPC_KNOB_CH    = "/NpRpc/knob";
@@ -40,6 +74,7 @@ private:
         , { EPacketType::AbortReq       , NRPC_CONNECT_CH }
         , { EPacketType::HeartbeatReq   , NRPC_CONNECT_CH }
         , { EPacketType::HeartbeatRes   , NRPC_CONNECT_CH }
+        , { EPacketType::AddModelMsg    , NRPC_CONNECT_CH }
         , { EPacketType::UpdateKnobMsg  , NRPC_KNOB_CH    }
         , { EPacketType::SelectModelMsg , NRPC_MODEL_CH   }
         , { EPacketType::BroadcastReq   , NRPC_BCAST_CH   }
@@ -71,6 +106,14 @@ public:
         return msg;
     }
 
+    static SimpleOscMsg genAddModelMsg(int32 sessionId, int32 id, String itemText, int32 itemIndex) {
+        SimpleOscMsg msg = genHeader(EPacketType::UpdateKnobMsg, sessionId);
+        msg.AddInt32(id);
+        msg.AddInt32(itemIndex);
+        msg.AddString(itemText.toStdString());
+        return msg;
+    }
+    
     static SimpleOscMsg genUpdateKnobMsg(int32 sessionId, int32 id, float val) {
         SimpleOscMsg msg = genHeader(EPacketType::UpdateKnobMsg, sessionId);
         msg.AddInt32(id);
