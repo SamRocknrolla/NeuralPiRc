@@ -30,7 +30,12 @@ void SimpleOscMsg::AddString(const std::string& value) {
     arguments.emplace_back(value);
 }
 
-void SimpleOscMsg::SerializeTo(juce::MemoryBlock& block) {
+void SimpleOscMsg::clear() {
+    arguments.clear();
+    address.clear();
+}
+
+void SimpleOscMsg::SerializeTo(juce::MemoryBlock& block) const {
     std::vector<uint8_t> outBuffer;
 
     // Write address
@@ -39,35 +44,31 @@ void SimpleOscMsg::SerializeTo(juce::MemoryBlock& block) {
     // Type tags
     std::string tag = ",";
     for (const auto& arg : arguments) {
-        switch (arg.type) {
-        case Argument::INT32: tag += 'i'; break;
-        case Argument::FLOAT32: tag += 'f'; break;
-        case Argument::STRING: tag += 's'; break;
-        }
+        if (arg.isInt32()) 
+            tag += 'i';
+        else if (arg.isFloat32()) 
+            tag += 'f';
+        else if (arg.isString()) 
+            tag += 's';
     }
     writePaddedString(outBuffer, tag);
 
     // Write argument data
     for (const auto& arg : arguments) {
-        switch (arg.type) {
-        case Argument::INT32: {
-            int32_t net = htonl(arg.i);
+        if (arg.isInt32()) {
+            int32_t net = htonl(arg.getInt32());
             const uint8_t* p = reinterpret_cast<const uint8_t*>(&net);
             outBuffer.insert(outBuffer.end(), p, p + 4);
-            break;
         }
-        case Argument::FLOAT32: {
-            uint32_t temp;
-            std::memcpy(&temp, &arg.f, 4);
-            temp = htonl(temp);
-            const uint8_t* p = reinterpret_cast<const uint8_t*>(&temp);
+        else if (arg.isFloat32()) {
+            float temp = arg.getFloat32();
+            int32_t* net = reinterpret_cast<int32_t*>(&temp);
+            *net = htonl(*net);
+            const uint8_t* p = reinterpret_cast<const uint8_t*>(net);
             outBuffer.insert(outBuffer.end(), p, p + 4);
-            break;
         }
-        case Argument::STRING: {
-            writePaddedString(outBuffer, arg.s);
-            break;
-        }
+        else if (arg.isString()) {
+            writePaddedString(outBuffer, arg.getString());
         }
     }
 
@@ -75,10 +76,10 @@ void SimpleOscMsg::SerializeTo(juce::MemoryBlock& block) {
     std::memcpy(block.getData(), outBuffer.data(), outBuffer.size());
 }
 
-bool SimpleOscMsg::DeserializeFrom(const juce::MemoryBlock& block) {
+bool SimpleOscMsg::DeserializeFrom(const juce::MemoryBlock& block, size_t bsize) {
     arguments.clear();
     const uint8_t* data = static_cast<const uint8_t*>(block.getData());
-    size_t size = block.getSize();
+    size_t size = (bsize)? bsize : block.getSize();
     size_t offset = 0;
 
     // Address

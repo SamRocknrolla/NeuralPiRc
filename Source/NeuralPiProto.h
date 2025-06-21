@@ -2,112 +2,57 @@
 
 #include <JuceHeader.h>
 
+#include "SimpleOscMsg.h"
+
 using namespace juce;
 
-struct UdpPacketHdr {
-    static const juce::uint16 NPRPC_PROTO_ID    { 0x7777 };
-    static const juce::uint16 NPRPC_VER         { 0x0001 };
-    static const juce::uint32 NPRPC_INV_SESS_ID { 0xFFFFFFFF };
 
-    /* HACK for support bcast of legacy receiver */
-    inline static const std::string NPRPC_BCAST_REQ = std::string("NeuralPiRcBroadcast") + '\x0';
-    inline static const std::string NPRPC_BCAST_RES = std::string("NeuralPiRcBcoadcastAck") + '\x0';
+class NpRpcMsgHelper {
+public:
+    static const juce::int32 NPRPC_VER{ 0x77770001 };
+    static const juce::int32 NPRPC_INV_SESS_ID{ -1 };
+    static const juce::int32 NPRPC_INV_SESS_TS{ -1 };
 
     enum class EPacketType
     {
-          Unknown        = 0x0
-        , ConnectReq     = 0x01
-        , ConnectRes     = 0x02
-        , Abort          = 0x03
-        , HeartbeatReq   = 0x04
-        , HeartbeatRes   = 0x05
-        , SliderUpdate   = 0x21
-        , StrListUpdate  = 0x22
+        Unknown = 0x0
+        , ConnectReq    = 0x01
+        , ConnectRes    = 0x02
+        , Abort         = 0x03
+        , HeartbeatReq  = 0x04
+        , HeartbeatRes  = 0x05
+        , ModelAdd      = 0x20
+        , SliderUpdate  = 0x21
+        , SelectModel   = 0x22
+        , bcastReq      = 0xFF
+        , bcastRes      = 0xFE
     };
 
-    uint16_t protoId;
-    uint16_t ver;
-    uint32_t sessionId;
-    EPacketType packetType;
-    uint8_t packetData[];
+    inline static const juce::String NRPC_BCAST_CH   = "/NpRpc/bcast";
+    inline static const juce::String NRPC_CONNECT_CH = "/NpRpc/connect";
+    inline static const juce::String NRPC_KNOB_CH    = "/NpRpc/knob";
+    inline static const juce::String NRPC_MODEL_CH   = "/NpRpc/model";
 
-    UdpPacketHdr()
-        : protoId(NPRPC_PROTO_ID)
-        , ver(NPRPC_VER)
-        , sessionId(NPRPC_INV_SESS_ID)
-        , packetType(UdpPacketHdr::EPacketType::Unknown)
-    {
+private:
+        inline static const std::unordered_map<EPacketType, juce::String> oscAddrMap = {
+          { EPacketType::ConnectReq   , NRPC_CONNECT_CH }
+        , { EPacketType::ConnectRes   , NRPC_CONNECT_CH }
+        , { EPacketType::Abort        , NRPC_CONNECT_CH }
+        , { EPacketType::HeartbeatReq , NRPC_CONNECT_CH }
+        , { EPacketType::HeartbeatRes , NRPC_CONNECT_CH }
+        , { EPacketType::SliderUpdate , NRPC_KNOB_CH }
+        , { EPacketType::SelectModel  , NRPC_MODEL_CH }
+        , { EPacketType::bcastReq     , NRPC_BCAST_CH }
+        , { EPacketType::bcastRes     , NRPC_BCAST_CH }
+    };
 
-    }
-
-    void toMemoryBlock(juce::MemoryBlock& block) const
-    {
-        block.append(&protoId, sizeof(protoId));
-        block.append(&packetType, sizeof(packetType));
-    }
-};
-
-// Structure to hold the UDP packet data (type, index, value)
-struct UdpSliderUpdate
-{
-    int index;                // Index of the slider or combo box
-    float value;              // Value of the slider or combo box index
-
-    static const int INVALID_ID = -1;
-
-    UdpSliderUpdate()
-        : index(INVALID_ID)
-        , value(1.0f) {}
-
-    // Convert the struct to a MemoryBlock for sending over the network
-    void toMemoryBlock(juce::MemoryBlock& block) const
-    {
-        block.append(&index, sizeof(index));
-        block.append(&value, sizeof(value));
-    }
-
-    // Parse from a MemoryBlock received over the network
-    static UdpSliderUpdate fromMemoryBlock(const juce::MemoryBlock& block)
-    {
-        UdpSliderUpdate data;
-        if (block.getSize() >= sizeof(UdpSliderUpdate))
-        {
-            std::memcpy(&data, block.getData(), sizeof(UdpSliderUpdate));
-        }
-        return data;
-    }
-};
-
-struct UdpStrUpdate
-{
-    static const size_t CBOX_VAL_MAX = 1024;
-    int index;
-    uint16 size;
-    char data[];
-
-    static const int INVALID_ID = -1;
-
-    UdpStrUpdate()
-        : index(INVALID_ID)
-        , size(0) {}
-
-    // Convert the struct to a MemoryBlock for sending over the network
-    void toMemoryBlock(juce::MemoryBlock& block) const
-    {
-        block.append(&index, sizeof(index));
-        block.append(&size, sizeof(size));
-        block.append(data, size);
-    }
-
-    // Parse from a MemoryBlock received over the network
-    static UdpStrUpdate fromMemoryBlock(const juce::MemoryBlock& block)
-    {
-        UdpStrUpdate data;
-        if (block.getSize() >= sizeof(UdpStrUpdate))
-        {
-            std::memcpy(&data, block.getData(), (block.getSize() > CBOX_VAL_MAX)? CBOX_VAL_MAX : block.getSize());
-        }
-        return data;
+public: 
+    static void genHeader(EPacketType type, int32 sessionId, SimpleOscMsg& msg) {
+        msg.clear();
+        msg.setAddress(oscAddrMap.find(type)->second.toStdString());
+        msg.AddInt32(NPRPC_VER);
+        msg.AddInt32(sessionId);
+        msg.AddInt32(static_cast<int32_t>(type));
     }
 };
 

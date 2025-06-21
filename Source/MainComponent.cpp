@@ -56,7 +56,9 @@ MainComponent::MainComponent()
 //        modelSelect.addItem(jsonFile.getFileNameWithoutExtension(), c);
 //        c += 1;
 //    }
-    modelSelect.onChange = [this] {modelSelectChanged(); };
+//    modelSelect.onChange = [this] {modelSelectChanged(); };
+    modelSelect.onChange = [this] { onCboxIndexChanged(EModelCboxId::Model); };
+    
 //    modelSelect.setSelectedItemIndex(processor.current_model_index, juce::NotificationType::dontSendNotification);
     modelSelect.setScrollWheelEnabled(true);
 
@@ -113,7 +115,7 @@ MainComponent::MainComponent()
 //        irSelect.addItem(jsonFile.getFileNameWithoutExtension(), i);
 //        i += 1;
 //    }
-    irSelect.onChange = [this] {irSelectChanged(); };
+    irSelect.onChange = [this] { onCboxIndexChanged(EModelCboxId::Ir); };
 //    irSelect.setSelectedItemIndex(processor.current_ir_index, juce::NotificationType::dontSendNotification);
     irSelect.setScrollWheelEnabled(true);
 
@@ -149,27 +151,8 @@ MainComponent::MainComponent()
     Slider& gainSlider = getGainSlider();
     gainSlider.setValue(gainValue, NotificationType::dontSendNotification);
 
-    ampGainKnob.onValueChange = [this]
-    {
-        const float sliderValue = static_cast<float> (getGainSlider().getValue());
-        const float gainValue = getParameterValue(gainName);
-
-        if (!approximatelyEqual(gainValue, sliderValue))
-        {
-            setParameterValue(gainName, sliderValue);
-
-            // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getGainSlider().getValue());
-
-//            if (!oscSender.send(gainAddressPattern, value))
-//            {
-//                updateOutConnectedLabel(false);
-//            }
-//            else
-//            {
-//                DBG("Sent value " + String(value) + " to AP " + gainAddressPattern);
-//            }
-        }
+    ampGainKnob.onValueChange = [this] {
+        onSliderValueChanged(EKnobId::EKnobId_Gain);
     };
 
     addAndMakeVisible(ampMasterKnob);
@@ -190,29 +173,9 @@ MainComponent::MainComponent()
     Slider& masterSlider = getMasterSlider();
     masterSlider.setValue(masterValue, NotificationType::dontSendNotification);
 
-    ampMasterKnob.onValueChange = [this]
-    {
-        const float sliderValue = static_cast<float> (getMasterSlider().getValue());
-        const float masterValue = getParameterValue(masterName);
-
-        if (!approximatelyEqual(masterValue, sliderValue))
-        {
-            setParameterValue(masterName, sliderValue);
-
-            // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getMasterSlider().getValue());
-
-//            if (!oscSender.send(masterAddressPattern, value))
-//            {
-//                updateOutConnectedLabel(false);
-//            }
-//            else
-//            {
-//                DBG("Sent value " + String(value) + " to AP " + masterAddressPattern);
-//            }
-        }
+    ampMasterKnob.onValueChange = [this] {
+        onSliderValueChanged(EKnobId::EKnobId_Master);
     };
-
 
     addAndMakeVisible(ampBassKnob);
     ampBassKnob.setLookAndFeel(&blueLookAndFeel);
@@ -608,6 +571,14 @@ void MainComponent::initParamStorage() {
     paramStorage.setProperty(irName, 0.0f, nullptr);
 }
 
+inline Slider& MainComponent::getKnob(EKnobId id) {
+    return *m_knobSlider[static_cast<size_t>(id)];
+}
+
+inline ComboBox& MainComponent::getModel(EModelCboxId id) {
+    return *m_modelCbox[static_cast<size_t>(id)];
+}
+
 //==============================================================================
 void MainComponent::paint (Graphics& g)
 {
@@ -720,8 +691,11 @@ void MainComponent::onConnectClicker() {
 }
 
 void MainComponent::onAbortClicker() {
-    connectButton.setButtonText("Aborting ...");
-    connectButton.setEnabled(false);
+    if (m_conn->disconnect()) {
+        connectButton.setButtonText("Aborting ...");
+        connectButton.setEnabled(false);
+    }
+    
     /*
     OSCMessage msg("/NeuralPiRpc/connect");
     msg.addInt32(constRcVerion);
@@ -803,6 +777,14 @@ void MainComponent::sliderValueChanged(Slider* slider)
         //    irSelect.setSelectedItemIndex(processor.getIrIndex(slider->getValue()), juce::NotificationType::dontSendNotification);
         //}
     }
+}
+
+void MainComponent::onSliderValueChanged(MainComponent::EKnobId id) {
+    m_conn->updateKnob(id, getKnob(id).getValue());
+}
+
+void MainComponent::onCboxIndexChanged(MainComponent::EModelCboxId id) {
+    m_conn->selectModel(static_cast<int32_t>(id), getModel(id).getSelectedItemIndex());
 }
 
 // OSC Messages
@@ -956,22 +938,25 @@ void MainComponent::labelTextChanged(Label* labelThatHasChanged)
 
 void MainComponent::updateKnob(int id, float value) {
     if (id >= 0 && id < EKnobId_MAX) {
-        knobSliders[id]->setValue(value);
+        getKnob(static_cast<EKnobId>(id)).setValue(value, NotificationType::dontSendNotification);
     }
 }
 
-void MainComponent::updateStrList(int id, String value) {
-    switch(id) {
-    case 0:
-        modelSelect.addItem(value, modelSelect.getNumItems() + 1);
-        break;
-    case 1:
-        irSelect.addItem(value, irSelect.getNumItems() + 1);
-        break;
-    default:
-        break;
+void MainComponent::updateModelIndex(int id, int index) {
+    if (id < static_cast<int>(EModelCboxId::MAX)) {
+        getModel(static_cast<EModelCboxId>(id)).setSelectedItemIndex(index, NotificationType::dontSendNotification);
     }
+}
 
+void MainComponent::addModelItem(int id, String itemValue, int itemIndex) {
+    if (id < static_cast<int>(EModelCboxId::MAX)) {
+        ComboBox& cbox = getModel(static_cast<EModelCboxId>(id));
+        int i = cbox.indexOfItemId(itemIndex);
+        if (i == -1)
+            cbox.addItem(itemValue, itemIndex);
+        else if (cbox.getItemText(i) != itemValue)
+            cbox.changeItemText(itemIndex, itemValue);
+    }
 }
 
 void MainComponent::onStateChanged(IUdpListener::EState prevState, IUdpListener::EState state) {

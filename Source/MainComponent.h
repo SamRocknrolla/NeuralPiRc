@@ -35,6 +35,12 @@ public:
         , EKnobId_MAX
     };
 
+    enum class EModelCboxId : int32_t {
+        Model
+        , Ir
+        , MAX
+    };
+
     inline static const String constDefBcAddr = "227.0.0.1";
     static const juce::int32 constDefLocPort{ 24025 };
     static const juce::int32 constDefRemPort{ 24024 };
@@ -113,6 +119,12 @@ private:
     //ImageButton ampLED;
     ComboBox modelSelect;
     ComboBox irSelect;
+
+    std::array<ComboBox*, static_cast<size_t>(EModelCboxId::MAX)> m_modelCbox = { &modelSelect, &irSelect };
+    inline ComboBox& getModel(EModelCboxId id);
+
+    //ComboBox* modelCbox[static_cast<size_t>(EModelId::MAX)] = { &modelSelect, &irSelect};
+
     Slider ampBassKnob;
     Slider ampMidKnob;
     Slider ampTrebleKnob;
@@ -120,8 +132,9 @@ private:
     Slider ampDelayKnob;
     Slider ampReverbKnob;
 
-    Slider* knobSliders[EKnobId_MAX] = {   &ampGainKnob, &ampMasterKnob, &ampDelayKnob, &ampReverbKnob 
+    Slider* m_knobSlider[EKnobId_MAX] = {   &ampGainKnob, &ampMasterKnob, &ampDelayKnob, &ampReverbKnob 
                                          , &ampBassKnob, &ampMidKnob, &ampTrebleKnob, & ampPresenceKnob};
+    inline Slider& MainComponent::getKnob(EKnobId id);
 
     Label GainLabel;
     Label LevelLabel;
@@ -147,6 +160,9 @@ private:
 
     virtual void buttonClicked(Button* button) override;
     virtual void sliderValueChanged(Slider* slider) override;
+
+    void onSliderValueChanged(EKnobId id);
+    void onCboxIndexChanged(EModelCboxId id);
 
     Label ampNameLabel{ {}, "Amp Name (no spaces): " };
     Label ampNameField{ {}, "NeuralPi" };
@@ -219,7 +235,8 @@ private:
     }
     // IUdpListener impl
     virtual void updateKnob(int id, float value) override;
-    virtual void updateStrList(int id, String value) override;
+    virtual void updateModelIndex(int id, int index) override;
+    virtual void addModelItem(int id, String itemValue, int itemIndex) override;
     virtual void onStateChanged(IUdpListener::EState prevState, IUdpListener::EState state) override;
     virtual void onBrReceived(const juce::String addr) override;
 
