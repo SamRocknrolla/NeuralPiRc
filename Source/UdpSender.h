@@ -22,14 +22,14 @@ public:
     };
 
     inline static const std::unordered_map<EState, String> EStateNames = {
-          {EState::Idle       , "Idle"}
-        , {EState::ReqScan    , "ReqScan"}
-        , {EState::Scanning   , "Scanning"}
-        , {EState::ReqConnect , "ReqConnect"}
-        , {EState::Connecting , "Connecting"}
-        , {EState::Connected  , "Connected"}
-        , {EState::Disconnecting    , "Disconnecting"}
-        , {EState::Error      , "Error"}
+          {EState::Idle          , "Idle"}
+        , {EState::ReqScan       , "ReqScan"}
+        , {EState::Scanning      , "Scanning"}
+        , {EState::ReqConnect    , "ReqConnect"}
+        , {EState::Connecting    , "Connecting"}
+        , {EState::Connected     , "Connected"}
+        , {EState::Disconnecting , "Disconnecting"}
+        , {EState::Error         , "Error"}
     };     
 
     virtual void updateKnob(int id, float value) = 0;
@@ -44,10 +44,6 @@ public:
 class UdpSender : public juce::Thread
 {
 public:
-
-    //using DataCallback  = std::function<void(int id, float value)>;
-    //using StateCallback = std::function<void(UdpSender::EState state)>;
-    //using ScanCallback  = std::function<void(std::vector<juce::String> addrList)>;
 
     explicit UdpSender(int port, const juce::String mcastAddr, IUdpListener& listener)
         : juce::Thread("UdpReceiverThread")
@@ -111,12 +107,12 @@ public:
                         if (msg.size() >= 3 &&
                             msg[0].isInt32() && msg[0].getInt32() == NpRpcMsgHelper::NPRPC_VER &&
                             msg[2].isInt32() && msg[2].getInt32() >= (uint32_t)NpRpcMsgHelper::EPacketType::ConnectReq &&
-                            msg[2].isInt32() && msg[2].getInt32() <= (uint32_t)NpRpcMsgHelper::EPacketType::bcastReq) {
+                            msg[2].isInt32() && msg[2].getInt32() <= (uint32_t)NpRpcMsgHelper::EPacketType::BroadcastReq) {
 
                             // process broadcast response
                             if (msg.getAddress() == NpRpcMsgHelper::NRPC_BCAST_CH &&
                                 msg[1].isInt32() && msg[1].getInt32() == NpRpcMsgHelper::NPRPC_INV_SESS_ID &&
-                                msg[2].getInt32() == (uint32_t)NpRpcMsgHelper::EPacketType::bcastRes) {
+                                msg[2].getInt32() == (uint32_t)NpRpcMsgHelper::EPacketType::BroadcastRes) {
                                 juce::MessageManager::callAsync([&updater = m_listener, resIpStr]() {
                                     updater.onBrReceived(resIpStr);
                                     });
@@ -126,7 +122,7 @@ public:
                                      msg[1].isInt32() && msg[1].getInt32() != NpRpcMsgHelper::NPRPC_INV_SESS_ID) {
 
                                 switch (static_cast<NpRpcMsgHelper::EPacketType>(msg[2].getInt32())) {
-                                case NpRpcMsgHelper::EPacketType::ModelAdd:
+                                case NpRpcMsgHelper::EPacketType::AddModelMsg:
                                     if (msg[3].isInt32() && msg[4].isInt32() && msg[5].isString()) {
                                         // Thread-safe UI update
                                         juce::MessageManager::callAsync([&updater = m_listener, msg]() {
@@ -156,7 +152,7 @@ public:
                             else if (msg.getAddress() == NpRpcMsgHelper::NRPC_KNOB_CH &&
                                 msg[1].isInt32() && msg[1].getInt32() != NpRpcMsgHelper::NPRPC_INV_SESS_ID &&
                                 (m_sessionId == NpRpcMsgHelper::NPRPC_INV_SESS_ID || msg[1].getInt32() == m_sessionId) &&
-                                msg[2].getInt32() == (uint32_t)NpRpcMsgHelper::EPacketType::SliderUpdate) {
+                                msg[2].getInt32() == (uint32_t)NpRpcMsgHelper::EPacketType::UpdateKnobMsg) {
 
                                 juce::MessageManager::callAsync([&updater = m_listener, msg]() {
                                     updater.updateKnob(msg[3].getInt32(), msg[4].getFloat32());
@@ -166,7 +162,7 @@ public:
                             else if (msg.getAddress() == NpRpcMsgHelper::NRPC_MODEL_CH &&
                                 msg[1].isInt32() && msg[1].getInt32() != NpRpcMsgHelper::NPRPC_INV_SESS_ID &&
                                 (m_sessionId == NpRpcMsgHelper::NPRPC_INV_SESS_ID || msg[1].getInt32() == m_sessionId) &&
-                                msg[2].getInt32() == (uint32_t)NpRpcMsgHelper::EPacketType::SelectModel ) {
+                                msg[2].getInt32() == (uint32_t)NpRpcMsgHelper::EPacketType::SelectModelMsg ) {
 
                                 juce::MessageManager::callAsync([&updater = m_listener, msg]() {
                                     updater.updateModelIndex(msg[3].getInt32(), msg[4].getInt32());
@@ -178,6 +174,7 @@ public:
             }
             stateStep();
             sendTxQueue();       
+//            sendMcastTxQueue();
         }
         DBG("UdpReceiverThread <=");
     }
@@ -209,20 +206,12 @@ public:
         return ret;
     }
 
-    void updateKnob(int32_t id, float value) {
-        SimpleOscMsg msg;
-        NpRpcMsgHelper::genHeader(NpRpcMsgHelper::EPacketType::SliderUpdate, NpRpcMsgHelper::NPRPC_INV_SESS_ID, msg);
-        msg.AddInt32(id);
-        msg.AddFloat32(value);
-        sendUdp(msg);
+    void updateKnob(int32_t id, float val) {
+        sendUdp(NpRpcMsgHelper::genUpdateKnobMsg(m_sessionId, id, val));
     }
 
-    void selectModel(int32_t id, int32_t index) {
-        SimpleOscMsg msg;
-        NpRpcMsgHelper::genHeader(NpRpcMsgHelper::EPacketType::SelectModel, NpRpcMsgHelper::NPRPC_INV_SESS_ID, msg);
-        msg.AddInt32(id);
-        msg.AddInt32(index);
-        sendUdp(msg);
+    void selectModel(int32_t id, int32_t itemId) {
+        sendUdp(NpRpcMsgHelper::genSelectModelMsg(m_sessionId, id, itemId));
     }
 
 private:
@@ -255,6 +244,16 @@ private:
         notify();
     }
 
+//    void sendUdpMcast(const SimpleOscMsg& msg)
+//    {
+//        juce::MemoryBlock buf;
+//        msg.SerializeTo(buf);
+//
+//        const juce::ScopedLock lock(m_mcastTxLock);
+//        m_mcastTxQueue.add(buf);
+//        notify();
+//    }
+
     int sendTxQueue() {
         const juce::ScopedLock lock(m_udpTxLock);
         int ret = 0;
@@ -264,6 +263,16 @@ private:
         }
         return ret;
     }
+
+//    int sendMcastTxQueue() {
+//        const juce::ScopedLock lock(m_mcastTxLock);
+//        int ret = 0;
+//        while (m_mcastTxQueue.size() > 0) {
+//            juce::MemoryBlock buf = m_mcastTxQueue.removeAndReturn(0);
+//            ret += (m_udpTxSocket.write(m_mcastAddr, m_txPort, buf.getData(), buf.getSize()) < 0) ? -1 : 0;
+//        }
+//        return ret;
+//    }
 
     void setState(IUdpListener::EState newState) {
         IUdpListener::EState curState = m_state.get();
@@ -284,29 +293,26 @@ private:
         switch (m_state.get()) {
         case IUdpListener::EState::ReqScan:
         {
-            SimpleOscMsg msg;
-            NpRpcMsgHelper::genHeader(NpRpcMsgHelper::EPacketType::bcastReq, NpRpcMsgHelper::NPRPC_INV_SESS_ID, msg);
+            // Send broadcast message without TX queue
             juce::MemoryBlock buf;
-            msg.SerializeTo(buf);
+            NpRpcMsgHelper::genBroadcastReq().SerializeTo(buf);
             m_udpTxSocket.write(m_mcastAddr, m_txPort, buf.getData(), buf.getSize());
 
             setState(IUdpListener::EState::Scanning);
-            m_scanTimer.start(SCAN_TIMEOUT_MS);
+            m_reqTimer.start(SCAN_TIMEOUT_MS);
 
             break;
         }
         case IUdpListener::EState::Scanning:
         {
-            if (!m_scanTimer.isValid() || m_scanTimer.IsElapsed()) {
+            if (!m_reqTimer.isValid() || m_reqTimer.IsElapsed()) {
                 setState(IUdpListener::EState::Disconnecting);
             }
             break;
         }
         case IUdpListener::EState::ReqConnect:
             {
-                SimpleOscMsg msg;
-                NpRpcMsgHelper::genHeader(NpRpcMsgHelper::EPacketType::ConnectReq, NpRpcMsgHelper::NPRPC_INV_SESS_ID, msg);
-                sendUdp(msg);
+                sendUdp(NpRpcMsgHelper::genConnectReq());
                 m_reqTimer.start(CFG_TIMEOUT_MS);
                 setState(IUdpListener::EState::Connecting);
             }
@@ -320,11 +326,27 @@ private:
             stepHbState();
             break;
         case IUdpListener::EState::Disconnecting:
+            {
+                juce::MemoryBlock buf;
+                NpRpcMsgHelper::genAbortReq(m_sessionId).SerializeTo(buf);
+                m_udpTxSocket.write(m_mcastAddr, m_txPort, buf.getData(), buf.getSize());
+            }
         case IUdpListener::EState::Error:
             m_sessionId = NpRpcMsgHelper::NPRPC_INV_SESS_ID;
             m_sessionTs = NpRpcMsgHelper::NPRPC_INV_SESS_TS;
-            setState(IUdpListener::EState::Idle);
+//            {
+//                const juce::ScopedLock lock(m_mcastTxLock);
+//                m_mcastTxQueue.clear();
+//            }
+            {
+                const juce::ScopedLock lock(m_udpTxLock);
+                m_udpTxQueue.clear();
+            }
+
+            m_reqTimer.stop();
+            m_hbTimer.stop();
             setHbState(EHbState::Idle);
+            setState(IUdpListener::EState::Idle);
             m_hbMissedCount = 0;
             break;
         default:
@@ -347,10 +369,7 @@ private:
         switch (m_hbState.get()) {
         case EHbState::Ready:
             {
-                SimpleOscMsg msg;
-                NpRpcMsgHelper::genHeader(NpRpcMsgHelper::EPacketType::HeartbeatReq, m_sessionId, msg);
-                msg.AddInt32(Time::getMillisecondCounter() - m_sessionTs);
-                sendUdp(msg);
+                sendUdp(NpRpcMsgHelper::genHeartbeatReq(m_sessionId, Time::getMillisecondCounter() - m_sessionTs));
                 m_hbTimer.start(HEARTBEAT_PERIOD_MS);
                 setHbState(EHbState::Wait);
             }
@@ -385,6 +404,10 @@ private:
     juce::CriticalSection m_udpTxLock;
     juce::Array<juce::MemoryBlock> m_udpTxQueue;
 
+//    juce::CriticalSection m_mcastTxLock;
+//    juce::Array<juce::MemoryBlock> m_mcastTxQueue;
+
+
     IUdpListener& m_listener;
 
     int32_t m_sessionId;
@@ -394,7 +417,7 @@ private:
     int m_hbSessionCount;
     int m_hbMissedCount;
 
-    ElapsedTimer m_scanTimer;
+    //ElapsedTimer m_scanTimer;
     ElapsedTimer m_reqTimer;
     ElapsedTimer m_hbTimer;
 };
