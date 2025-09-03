@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="f5uELO" name="NeuralPiRpc" projectType="guiapp" useAppConfig="0"
+<JUCERPROJECT id="f5uELO" name="NeuralPiRc" projectType="guiapp" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
-  <MAINGROUP id="OZ1SRz" name="NeuralPiRpc">
+  <MAINGROUP id="OZ1SRz" name="NeuralPiRc">
     <GROUP id="{B651BDC6-4D88-3102-26C5-E4D8EB538034}" name="Resources">
       <FILE id="Vb4rw1" name="npi_background.jpg" compile="0" resource="1"
             file="resources/npi_background.jpg"/>
     </GROUP>
-    <GROUP id="{7BE8E43A-9129-ABE8-0D0F-209230AB7A2A}" name="Source">
-      <FILE id="WwpKc2" name="ElapsedTimer.h" compile="0" resource="0" file="Source/cmn/ElapsedTimer.h"/>
-      <FILE id="a1ySCi" name="IUdpRcListener.h" compile="0" resource="0"
-            file="Source/cmn/IUdpRcListener.h"/>
-      <FILE id="Sxw51z" name="NeuralPiProto.h" compile="0" resource="0" file="Source/cmn/NeuralPiProto.h"/>
-      <FILE id="aqOh7B" name="SimpleOscMsg.h" compile="0" resource="0" file="Source/cmn/SimpleOscMsg.h"/>
-      <FILE id="je9EcL" name="UdpSender.h" compile="0" resource="0" file="Source/UdpSender.h"/>
-      <FILE id="n2HxIU" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
-      <FILE id="blpMQZ" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+    <GROUP id="{7BE8E43A-9129-ABE8-0D0F-209230AB7A2A}" name="src">
+      <FILE id="je9EcL" name="UdpSender.h" compile="0" resource="0" file="src/UdpSender.h"/>
+      <FILE id="n2HxIU" name="Main.cpp" compile="1" resource="0" file="src/Main.cpp"/>
+      <FILE id="blpMQZ" name="MainComponent.h" compile="0" resource="0" file="src/MainComponent.h"/>
       <FILE id="Sczcxz" name="MainComponent.cpp" compile="1" resource="0"
-            file="Source/MainComponent.cpp"/>
+            file="src/MainComponent.cpp"/>
     </GROUP>
+    <FILE id="gYWDr2" name="ElapsedTimer.h" compile="0" resource="0" file="modules/osc_proto/src/ElapsedTimer.h"/>
+    <FILE id="GZPnBA" name="IUdpRcListener.h" compile="0" resource="0"
+          file="modules/osc_proto/src/IUdpRcListener.h"/>
+    <FILE id="icmNTD" name="NeuralPiProto.h" compile="0" resource="0" file="modules/osc_proto/src/NeuralPiProto.h"/>
+    <FILE id="H4CDaQ" name="SimpleOscMsg.h" compile="0" resource="0" file="modules/osc_proto/src/SimpleOscMsg.h"/>
   </MAINGROUP>
   <MODULES>
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
@@ -33,8 +33,8 @@
   <EXPORTFORMATS>
     <ANDROIDSTUDIO targetFolder="Builds/Android">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="NeuralPiRpc"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="NeuralPiRpc"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="NeuralPiRc" headerPath="../../modules/osc_proto/src"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="NeuralPiRc" headerPath="../../modules/osc_proto/src"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../../../Software/devtools/JUCE/modules"/>
@@ -48,8 +48,8 @@
     </ANDROIDSTUDIO>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="NeuralPiRpc"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="NeuralPiRpc"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="NeuralPiRc" headerPath="../../modules/osc_proto/src"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="NeuralPiRc" headerPath="../../modules/osc_proto/src"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../../../Software/devtools/JUCE/modules"/>
@@ -63,8 +63,8 @@
     </LINUX_MAKE>
     <VS2019 targetFolder="Builds/VisualStudio2019">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="NeuralPiRpc"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="NeuralPiRpc"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="NeuralPiRc" headerPath="../../modules/osc_proto/src"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="NeuralPiRc" headerPath="../../modules/osc_proto/src"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../../../Software/devtools/JUCE/modules"/>

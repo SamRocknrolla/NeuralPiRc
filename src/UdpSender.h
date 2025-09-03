@@ -1,9 +1,9 @@
 #pragma once
 
-#include "cmn/IUdpRcListener.h"
-#include "cmn/NeuralPiProto.h"
-#include "cmn/ElapsedTimer.h"
-#include "cmn/SimpleOscMsg.h"
+#include "IUdpRcListener.h"
+#include "NeuralPiProto.h"
+#include "ElapsedTimer.h"
+#include "SimpleOscMsg.h"
 
 #include <JuceHeader.h>
 #include <functional>

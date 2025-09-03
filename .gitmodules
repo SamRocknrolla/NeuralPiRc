@@ -1,0 +1,3 @@
+[submodule "modules/osc_proto"]
+	path = modules/osc_proto
+	url = https://github.com/SamRocknrolla/NeuralPiOscProtocol.git
