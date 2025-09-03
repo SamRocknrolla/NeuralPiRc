@@ -8,11 +8,11 @@
             file="resources/npi_background.jpg"/>
     </GROUP>
     <GROUP id="{7BE8E43A-9129-ABE8-0D0F-209230AB7A2A}" name="Source">
-      <FILE id="eMsqd2" name="SimpleOscMsg.cpp" compile="1" resource="0"
-            file="Source/SimpleOscMsg.cpp"/>
-      <FILE id="jA0UhW" name="SimpleOscMsg.h" compile="0" resource="0" file="Source/SimpleOscMsg.h"/>
-      <FILE id="Qec6oV" name="ElapsedTimer.h" compile="0" resource="0" file="Source/ElapsedTimer.h"/>
-      <FILE id="n9NIMk" name="NeuralPiProto.h" compile="0" resource="0" file="Source/NeuralPiProto.h"/>
+      <FILE id="WwpKc2" name="ElapsedTimer.h" compile="0" resource="0" file="Source/cmn/ElapsedTimer.h"/>
+      <FILE id="a1ySCi" name="IUdpRcListener.h" compile="0" resource="0"
+            file="Source/cmn/IUdpRcListener.h"/>
+      <FILE id="Sxw51z" name="NeuralPiProto.h" compile="0" resource="0" file="Source/cmn/NeuralPiProto.h"/>
+      <FILE id="aqOh7B" name="SimpleOscMsg.h" compile="0" resource="0" file="Source/cmn/SimpleOscMsg.h"/>
       <FILE id="je9EcL" name="UdpSender.h" compile="0" resource="0" file="Source/UdpSender.h"/>
       <FILE id="n2HxIU" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="blpMQZ" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>

@@ -107,7 +107,7 @@ public:
     }
 
     static SimpleOscMsg genAddModelMsg(int32 sessionId, int32 id, String itemText, int32 itemIndex) {
-        SimpleOscMsg msg = genHeader(EPacketType::UpdateKnobMsg, sessionId);
+        SimpleOscMsg msg = genHeader(EPacketType::AddModelMsg, sessionId);
         msg.AddInt32(id);
         msg.AddInt32(itemIndex);
         msg.AddString(itemText.toStdString());

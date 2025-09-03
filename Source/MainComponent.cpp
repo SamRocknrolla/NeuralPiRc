@@ -36,7 +36,7 @@ MainComponent::MainComponent()
             //setParameterValue(modelName, sliderValue);
 
             // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getModelSlider().getValue());
+            //float value = static_cast<float> (getModelSlider().getValue());
 
             //if (!oscSender.send(modelAddressPattern, value))
             {
@@ -95,7 +95,7 @@ MainComponent::MainComponent()
             setParameterValue(irName, sliderValue);
 
             // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getIrSlider().getValue());
+            //float value = static_cast<float> (getIrSlider().getValue());
 
 //            if (!oscSender.send(irAddressPattern, value))
 //            {
@@ -193,27 +193,8 @@ MainComponent::MainComponent()
     Slider& bassSlider = getBassSlider();
     bassSlider.setValue(bassValue, NotificationType::dontSendNotification);
 
-    ampBassKnob.onValueChange = [this]
-    {
-        const float sliderValue = static_cast<float> (getBassSlider().getValue());
-        const float bassValue = getParameterValue(bassName);
-
-        if (!approximatelyEqual(bassValue, sliderValue))
-        {
-            setParameterValue(bassName, sliderValue);
-
-            // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getBassSlider().getValue());
-
-//            if (!oscSender.send(bassAddressPattern, value))
-//            {
-//                updateOutConnectedLabel(false);
-//            }
-//            else
-//            {
-//                DBG("Sent value " + String(value) + " to AP " + bassAddressPattern);
-//            }
-        }
+    ampBassKnob.onValueChange = [this] {
+        onSliderValueChanged(EKnobId::EKnobId_Bass);
     };
 
     addAndMakeVisible(ampMidKnob);
@@ -232,27 +213,8 @@ MainComponent::MainComponent()
     Slider& midSlider = getMidSlider();
     midSlider.setValue(midValue, NotificationType::dontSendNotification);
 
-    ampMidKnob.onValueChange = [this]
-    {
-        const float sliderValue = static_cast<float> (getMidSlider().getValue());
-        const float midValue = getParameterValue(midName);
-
-        if (!approximatelyEqual(midValue, sliderValue))
-        {
-            setParameterValue(midName, sliderValue);
-
-            // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getMidSlider().getValue());
-
-//            if (!oscSender.send(midAddressPattern, value))
-//            {
-//                updateOutConnectedLabel(false);
-//            }
-//            else
-//            {
-//                DBG("Sent value " + String(value) + " to AP " + midAddressPattern);
-//            }
-        }
+    ampMidKnob.onValueChange = [this] {
+        onSliderValueChanged(EKnobId::EKnobId_Mid);
     };
 
     addAndMakeVisible(ampTrebleKnob);
@@ -271,27 +233,8 @@ MainComponent::MainComponent()
     Slider& trebleSlider = getTrebleSlider();
     trebleSlider.setValue(trebleValue, NotificationType::dontSendNotification);
 
-    ampTrebleKnob.onValueChange = [this]
-    {
-        const float sliderValue = static_cast<float> (getTrebleSlider().getValue());
-        const float trebleValue = getParameterValue(trebleName);
-
-        if (!approximatelyEqual(trebleValue, sliderValue))
-        {
-            setParameterValue(trebleName, sliderValue);
-
-            // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getTrebleSlider().getValue());
-
-//            if (!oscSender.send(trebleAddressPattern, value))
-//            {
-//                updateOutConnectedLabel(false);
-//            }
-//            else
-//            {
-//                DBG("Sent value " + String(value) + " to AP " + trebleAddressPattern);
-//            }
-        }
+    ampTrebleKnob.onValueChange = [this] {
+        onSliderValueChanged(EKnobId::EKnobId_Treble);
     };
 
     addAndMakeVisible(ampPresenceKnob);
@@ -310,27 +253,8 @@ MainComponent::MainComponent()
     Slider& presenceSlider = getPresenceSlider();
     trebleSlider.setValue(presenceValue, NotificationType::dontSendNotification);
 
-    ampPresenceKnob.onValueChange = [this]
-    {
-        const float sliderValue = static_cast<float> (getPresenceSlider().getValue());
-        const float presenceValue = getParameterValue(presenceName);
-
-        if (!approximatelyEqual(presenceValue, sliderValue))
-        {
-            setParameterValue(presenceName, sliderValue);
-
-            // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getPresenceSlider().getValue());
-
-//            if (!oscSender.send(presenceAddressPattern, value))
-//            {
-//                updateOutConnectedLabel(false);
-//            }
-//            else
-//            {
-//                DBG("Sent value " + String(value) + " to AP " + presenceAddressPattern);
-//            }
-        }
+    ampPresenceKnob.onValueChange = [this] {
+        onSliderValueChanged(EKnobId::EKnobId_Presence);
     };
 
     addAndMakeVisible(ampDelayKnob);
@@ -349,27 +273,8 @@ MainComponent::MainComponent()
     Slider& delaySlider = getDelaySlider();
     delaySlider.setValue(delayValue, NotificationType::dontSendNotification);
 
-    ampDelayKnob.onValueChange = [this]
-    {
-        const float sliderValue = static_cast<float> (getDelaySlider().getValue());
-        const float delayValue = getParameterValue(delayName);
-
-        if (!approximatelyEqual(delayValue, sliderValue))
-        {
-            setParameterValue(delayName, sliderValue);
-
-            // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getDelaySlider().getValue());
-
-//            if (!oscSender.send(delayAddressPattern, value))
-//            {
-//                updateOutConnectedLabel(false);
-//            }
-//            else
-//            {
-//                DBG("Sent value " + String(value) + " to AP " + delayAddressPattern);
-//            }
-        }
+    ampDelayKnob.onValueChange = [this] {
+        onSliderValueChanged(EKnobId::EKnobId_Delay);
     };
 
     addAndMakeVisible(ampReverbKnob);
@@ -388,27 +293,8 @@ MainComponent::MainComponent()
     Slider& reverbSlider = getReverbSlider();
     reverbSlider.setValue(reverbValue, NotificationType::dontSendNotification);
 
-    ampReverbKnob.onValueChange = [this]
-    {
-        const float sliderValue = static_cast<float> (getReverbSlider().getValue());
-        const float reverbValue = getParameterValue(reverbName);
-
-        if (!approximatelyEqual(reverbValue, sliderValue))
-        {
-            setParameterValue(reverbName, sliderValue);
-
-            // create and send an OSC message with an address and a float value:
-            float value = static_cast<float> (getReverbSlider().getValue());
-
-//            if (!oscSender.send(reverbAddressPattern, value))
-//            {
-//                updateOutConnectedLabel(false);
-//            }
-//            else
-//            {
-//                DBG("Sent value " + String(value) + " to AP " + reverbAddressPattern);
-//            }
-        }
+    ampReverbKnob.onValueChange = [this] {
+        onSliderValueChanged(EKnobId::EKnobId_Reverb);
     };
 
     addAndMakeVisible(GainLabel);
@@ -696,65 +582,11 @@ void MainComponent::onAbortClicker() {
         connectButton.setButtonText("Aborting ...");
         connectButton.setEnabled(false);
     }
-    
-    /*
-    OSCMessage msg("/NeuralPiRpc/connect");
-    msg.addInt32(constRcVerion);
-    msg.addInt32(-1);
-    msg.addInt32(ERcConnectCmdId_Abort);
-
-    oscSender.send(msg);
-    connectButton.setButtonText("Connect");
-    oscSender.disconnect();
-    connectButton.setEnabled(true);
-    scanButton.setEnabled(true);
-    ipCbox.setEnabled(true);
-    setState(EState_Idle);
-    */
 }
 
 void MainComponent::onScanClicked() {
     ipCbox.clear();
     m_conn->scan();
-
-    /*
-    unsigned char bcMarker[] = { "NeuralPiRcBroadcast" };
-    sockSender.write(constMulticastAddress, constDefRcPort, bcMarker, sizeof(bcMarker));
-    scanButton.setButtonText("Scanning");
-    startTimer(ETimerType_Connect, 1000);
-    startTimer(ETimerType_Scan, 20);
-    connectButton.setEnabled(false);
-    scanButton.setEnabled(false);
-    setState(EState_Scan);
-    */
-}
-
-
-void MainComponent::modelSelectChanged()
-{
-//    const int selectedFileIndex = modelSelect.getSelectedItemIndex();
-//    if (selectedFileIndex >= 0 && selectedFileIndex < processor.jsonFiles.size()) {
-//        File selectedFile = processor.userAppDataDirectory_tones.getFullPathName() + "/" + modelSelect.getText() + ".json";
-//        //processor.loadConfig(processor.jsonFiles[selectedFileIndex]);
-//        processor.loadConfig(selectedFile);
-//        processor.current_model_index = selectedFileIndex;
-//    }
-//    auto newValue = static_cast<float>(processor.current_model_index / (processor.num_models - 1.0));
-//    modelKnob.setValue(newValue);
-//    setParamKnobColor(processor.params);
-}
-
-void MainComponent::irSelectChanged()
-{
-//    const int selectedFileIndex = irSelect.getSelectedItemIndex();
-//    if (selectedFileIndex >= 0 && selectedFileIndex < processor.irFiles.size()) {
-//        File selectedFile = processor.userAppDataDirectory_irs.getFullPathName() + "/" + irSelect.getText() + ".wav";
-//        //processor.loadIR(processor.irFiles[selectedFileIndex]);
-//        processor.loadIR(selectedFile);
-//        processor.current_ir_index = selectedFileIndex;
-//    }
-//    auto newValue = static_cast<float>(processor.current_ir_index / (processor.num_irs - 1.0));
-//    irKnob.setValue(newValue);
 }
 
 void MainComponent::updateToggleState(juce::Button* button, juce::String name)

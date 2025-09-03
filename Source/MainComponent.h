@@ -154,9 +154,7 @@ private:
     ToggleButton irButton;
     ToggleButton lstmButton;
 
-    void modelSelectChanged();
     void updateToggleState(juce::Button* button, juce::String name);
-    void irSelectChanged();
 
     virtual void buttonClicked(Button* button) override;
     virtual void sliderValueChanged(Slider* slider) override;
