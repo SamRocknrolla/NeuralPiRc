@@ -8,7 +8,6 @@
 
 #include <JuceHeader.h>
 #include "MainComponent.h"
-//#include "UdpSender.h"
 
 
 //==============================================================================
@@ -78,8 +77,6 @@ public:
             centreWithSize (getWidth(), getHeight());
            #endif
 
-            //m_udpReceiver = std::make_unique<UdpReceiverThread>(12345, "227.0.0.1", m_mainComponent->getUpdateCallback());
-            //m_udpReceiver->startThread();
             setVisible (true);
         }
 
@@ -100,7 +97,6 @@ public:
 
     private:
         std::unique_ptr<MainComponent> m_mainComponent;
-        //std::unique_ptr<UdpReceiverThread> m_udpReceiver;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
     };
