@@ -12,7 +12,7 @@ class UdpSender : public juce::Thread
 {
 public:
 
-    explicit UdpSender(int port, const juce::String mcastAddr, IUdpListener& listener)
+    explicit UdpSender(int port, const juce::String mcastAddr, IUdpRcClientListener& listener)
         : juce::Thread("UdpReceiverThread")
         , m_rxPort(port)
         , m_txPort(port - 1)
@@ -20,7 +20,7 @@ public:
         , m_udpRxSocket(true)
         , m_udpTxSocket(true)
         , m_listener(listener)
-        , m_state(IUdpListener::EState::Idle)
+        , m_state(IUdpRcListener::EState::Idle)
         , m_sessionId(NpRpcProto::NPRPC_INV_SESS_ID)
         , m_sessionTs(NpRpcProto::NPRPC_INV_SESS_TS)
         , m_hbState(EHbState::Idle)
@@ -41,16 +41,16 @@ public:
         DBG("UdpReceiverThread =>");
         if (!m_udpRxSocket.bindToPort(m_rxPort)) {
             DBG("Failed to bind UDP socket on port: " << m_rxPort);
-            setState(IUdpListener::EState::Error);
+            setState(IUdpRcListener::EState::Error);
             return;
         }
         if (!m_udpRxSocket.joinMulticast(m_mcastAddr)) {
             DBG("Listening for UDP packets on port: " << m_rxPort);
-            setState(IUdpListener::EState::Error);
+            setState(IUdpRcListener::EState::Error);
             return;
         }
 
-        setState(IUdpListener::EState::Idle);
+        setState(IUdpRcListener::EState::Idle);
         while (!threadShouldExit())
         {
             juce::MemoryBlock buffer;
@@ -112,12 +112,12 @@ public:
                                     m_sessionId = _sessionId;
                                     m_sessionTs = Time::getMillisecondCounter();
 
-                                    setState(IUdpListener::EState::Connected);
+                                    setState(IUdpRcListener::EState::Connected);
                                     m_hbMissedCount = 0;
                                     setHbState(EHbState::Ready);
                                     break;
                                 case NpRpcProto::EPacketType::HeartbeatRes:
-                                    if (m_state.get() == IUdpListener::EState::Connected) {
+                                    if (m_state.get() == IUdpRcListener::EState::Connected) {
                                         m_hbMissedCount = 0;
                                         setHbState(EHbState::Ready);
                                     }
@@ -156,19 +156,18 @@ public:
             }
             stateStep();
             sendTxQueue();       
-//            sendMcastTxQueue();
         }
         DBG("UdpReceiverThread <=");
     }
 
     bool scan() {
-        bool ret = m_state.compareAndSetBool(IUdpListener::EState::ReqScan, IUdpListener::EState::Idle);
+        bool ret = m_state.compareAndSetBool(IUdpRcListener::EState::ReqScan, IUdpRcListener::EState::Idle);
         return ret;
     }
 
     bool connect(String addr) {
         m_txAddr = addr;
-        bool ret = m_state.compareAndSetBool(IUdpListener::EState::ReqConnect, IUdpListener::EState::Idle);
+        bool ret = m_state.compareAndSetBool(IUdpRcListener::EState::ReqConnect, IUdpRcListener::EState::Idle);
         if (ret) {
             m_reqTimer.start(CFG_TIMEOUT_MS);
         }
@@ -176,24 +175,28 @@ public:
     }
 
     bool disconnect() {
-        bool ret = m_state.compareAndSetBool(IUdpListener::EState::Disconnecting, IUdpListener::EState::Connected);
+        bool ret = m_state.compareAndSetBool(IUdpRcListener::EState::Disconnecting, IUdpRcListener::EState::Connected);
         if (!ret) {
-            if (m_state.get() == IUdpListener::EState::Idle) {
+            if (m_state.get() == IUdpRcListener::EState::Idle) {
                 ret = true;
             }
             else {
-                DBG("Disconnect request ignored by state: [" << IUdpListener::EStateNames.at(m_state.get()));
+                DBG("Disconnect request ignored by state: [" << IUdpRcListener::EStateNames.at(m_state.get()));
             }
         }
         return ret;
     }
 
     void updateKnob(int32_t id, float val) {
-        sendUdp(NpRpcProto::genUpdateKnobMsg(m_sessionId, id, val));
+        if (m_state.get() == IUdpRcListener::EState::Connected) {
+            sendUdp(NpRpcProto::genUpdateKnobMsg(m_sessionId, id, val));
+        }
     }
 
     void selectModel(int32_t id, int32_t itemId) {
-        sendUdp(NpRpcProto::genSelectModelMsg(m_sessionId, id, itemId));
+        if (m_state.get() == IUdpRcListener::EState::Connected) {
+            sendUdp(NpRpcProto::genSelectModelMsg(m_sessionId, id, itemId));
+        }
     }
 
 private:
@@ -226,16 +229,6 @@ private:
         notify();
     }
 
-//    void sendUdpMcast(const SimpleOscMsg& msg)
-//    {
-//        juce::MemoryBlock buf;
-//        msg.SerializeTo(buf);
-//
-//        const juce::ScopedLock lock(m_mcastTxLock);
-//        m_mcastTxQueue.add(buf);
-//        notify();
-//    }
-
     int sendTxQueue() {
         const juce::ScopedLock lock(m_udpTxLock);
         int ret = 0;
@@ -246,20 +239,10 @@ private:
         return ret;
     }
 
-//    int sendMcastTxQueue() {
-//        const juce::ScopedLock lock(m_mcastTxLock);
-//        int ret = 0;
-//        while (m_mcastTxQueue.size() > 0) {
-//            juce::MemoryBlock buf = m_mcastTxQueue.removeAndReturn(0);
-//            ret += (m_udpTxSocket.write(m_mcastAddr, m_txPort, buf.getData(), buf.getSize()) < 0) ? -1 : 0;
-//        }
-//        return ret;
-//    }
-
-    void setState(IUdpListener::EState newState) {
-        IUdpListener::EState curState = m_state.get();
+    void setState(IUdpRcListener::EState newState) {
+        IUdpRcListener::EState curState = m_state.get();
         if (newState != curState) {
-            DBG("State: " << IUdpListener::EStateNames.at(curState) << " => " << IUdpListener::EStateNames.at(newState));
+            DBG("State: " << IUdpRcListener::EStateNames.at(curState) << " => " << IUdpRcListener::EStateNames.at(newState));
             m_state = newState;
             // Thread-safe UI update
             juce::MessageManager::callAsync([&updater = m_listener, curState, newState]() {
@@ -267,59 +250,55 @@ private:
             });
         }
         else {
-            DBG("Already in state: " << IUdpListener::EStateNames.at(newState));
+            DBG("Already in state: " << IUdpRcListener::EStateNames.at(newState));
         }
     }
 
     void stateStep() {
         switch (m_state.get()) {
-        case IUdpListener::EState::ReqScan:
+        case IUdpRcListener::EState::ReqScan:
         {
             // Send broadcast message without TX queue
             juce::MemoryBlock buf;
             NpRpcProto::genBroadcastReq().SerializeTo(buf);
             m_udpTxSocket.write(m_mcastAddr, m_txPort, buf.getData(), static_cast<int>(buf.getSize()));
 
-            setState(IUdpListener::EState::Scanning);
+            setState(IUdpRcListener::EState::Scanning);
             m_reqTimer.start(SCAN_TIMEOUT_MS);
 
             break;
         }
-        case IUdpListener::EState::Scanning:
+        case IUdpRcListener::EState::Scanning:
         {
             if (!m_reqTimer.isValid() || m_reqTimer.IsElapsed()) {
-                setState(IUdpListener::EState::Disconnecting);
+                setState(IUdpRcListener::EState::Disconnecting);
             }
             break;
         }
-        case IUdpListener::EState::ReqConnect:
+        case IUdpRcListener::EState::ReqConnect:
             {
                 sendUdp(NpRpcProto::genConnectReq());
                 m_reqTimer.start(CFG_TIMEOUT_MS);
-                setState(IUdpListener::EState::Connecting);
+                setState(IUdpRcListener::EState::Connecting);
             }
             break;
-        case IUdpListener::EState::Connecting:
+        case IUdpRcListener::EState::Connecting:
             if (!m_reqTimer.isValid() || m_reqTimer.IsElapsed()) {
-                setState(IUdpListener::EState::Disconnecting);
+                setState(IUdpRcListener::EState::Disconnecting);
             }
             break;
-        case IUdpListener::EState::Connected:
+        case IUdpRcListener::EState::Connected:
             stepHbState();
             break;
-        case IUdpListener::EState::Disconnecting:
+        case IUdpRcListener::EState::Disconnecting:
             {
                 juce::MemoryBlock buf;
                 NpRpcProto::genAbortReq(m_sessionId).SerializeTo(buf);
                 m_udpTxSocket.write(m_mcastAddr, m_txPort, buf.getData(), static_cast<int>(buf.getSize()));
             }
-        case IUdpListener::EState::Error:
+        case IUdpRcListener::EState::Error:
             m_sessionId = NpRpcProto::NPRPC_INV_SESS_ID;
             m_sessionTs = NpRpcProto::NPRPC_INV_SESS_TS;
-//            {
-//                const juce::ScopedLock lock(m_mcastTxLock);
-//                m_mcastTxQueue.clear();
-//            }
             {
                 const juce::ScopedLock lock(m_udpTxLock);
                 m_udpTxQueue.clear();
@@ -328,7 +307,7 @@ private:
             m_reqTimer.stop();
             m_hbTimer.stop();
             setHbState(EHbState::Idle);
-            setState(IUdpListener::EState::Idle);
+            setState(IUdpRcListener::EState::Idle);
             m_hbMissedCount = 0;
             break;
         default:
@@ -364,7 +343,7 @@ private:
                 }
                 else {
                     m_hbMissedCount = 0;
-                    setState(IUdpListener::EState::Disconnecting);
+                    setState(IUdpRcListener::EState::Disconnecting);
                 }
             }
             break;
@@ -386,15 +365,11 @@ private:
     juce::CriticalSection m_udpTxLock;
     juce::Array<juce::MemoryBlock> m_udpTxQueue;
 
-//    juce::CriticalSection m_mcastTxLock;
-//    juce::Array<juce::MemoryBlock> m_mcastTxQueue;
-
-
-    IUdpListener& m_listener;
+    IUdpRcClientListener& m_listener;
 
     int32_t m_sessionId;
     int32_t m_sessionTs;
-    juce::Atomic<IUdpListener::EState> m_state;
+    juce::Atomic<IUdpRcListener::EState> m_state;
     juce::Atomic<EHbState> m_hbState;
     int m_hbSessionCount;
     int m_hbMissedCount;
