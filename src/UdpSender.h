@@ -132,7 +132,7 @@ public:
                                 (m_sessionId == NpRpcProto::NPRPC_INV_SESS_ID || _sessionId == m_sessionId) &&
                                 _type == NpRpcProto::EPacketType::UpdateKnobMsg) {
 
-                                DBG("UpdateKnobMsg: id: " << msg[NpRpcProto::EUpdateKnobMsg_KnobId].getInt32() << " value: " << msg[NpRpcProto::EUpdateKnobMsg_KnobValue].getFloat32());
+                                //DBG("UpdateKnobMsg: id: " << msg[NpRpcProto::EUpdateKnobMsg_KnobId].getInt32() << " value: " << msg[NpRpcProto::EUpdateKnobMsg_KnobValue].getFloat32());
                                 juce::MessageManager::callAsync([&updater = m_listener, msg]() {
                                     updater.updateKnob(msg[NpRpcProto::EUpdateKnobMsg_KnobId].getInt32(), 
                                                        msg[NpRpcProto::EUpdateKnobMsg_KnobValue].getFloat32());
@@ -144,7 +144,7 @@ public:
                                 (m_sessionId == NpRpcProto::NPRPC_INV_SESS_ID || _sessionId == m_sessionId) &&
                                 _type == NpRpcProto::EPacketType::SelectModelMsg ) {
 
-                                DBG("SelectModel: id: " << msg[NpRpcProto::ESelectModel_ModelId].getInt32() << " index: " << msg[NpRpcProto::ESelectModel_ItemIndex].getInt32());
+                                //DBG("SelectModel: id: " << msg[NpRpcProto::ESelectModel_ModelId].getInt32() << " index: " << msg[NpRpcProto::ESelectModel_ItemIndex].getInt32());
                                 juce::MessageManager::callAsync([&updater = m_listener, msg]() {
                                     updater.updateModelIndex(msg[NpRpcProto::ESelectModel_ModelId].getInt32(),
                                                              msg[NpRpcProto::ESelectModel_ItemIndex].getInt32());

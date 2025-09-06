@@ -27,6 +27,7 @@
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_osc" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
   </MODULES>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
@@ -44,6 +45,7 @@
         <MODULEPATH id="juce_gui_basics" path="../../../Software/devtools/JUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="../../../Software/devtools/JUCE/modules"/>
         <MODULEPATH id="juce_osc" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../Software/devtools/JUCE/JUCE-8.0.9/modules"/>
       </MODULEPATHS>
     </ANDROIDSTUDIO>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
@@ -59,6 +61,7 @@
         <MODULEPATH id="juce_gui_basics" path="../../../Software/devtools/JUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="../../../Software/devtools/JUCE/modules"/>
         <MODULEPATH id="juce_osc" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../Software/devtools/JUCE/JUCE-8.0.9/modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
     <VS2019 targetFolder="Builds/VisualStudio2019">
@@ -74,6 +77,7 @@
         <MODULEPATH id="juce_gui_basics" path="../../../Software/devtools/JUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="../../../Software/devtools/JUCE/modules"/>
         <MODULEPATH id="juce_osc" path="../../../Software/devtools/JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../Software/devtools/JUCE/JUCE-8.0.9/modules"/>
       </MODULEPATHS>
     </VS2019>
   </EXPORTFORMATS>

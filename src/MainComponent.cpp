@@ -2,7 +2,10 @@
 
 //==============================================================================
 MainComponent::MainComponent()
+ : m_updateKnobCounter(0) 
 {
+    openGLContext.attachTo(*this);
+    
     blueLookAndFeel.setColour(juce::Slider::thumbColourId, juce::Colours::aqua);
     redLookAndFeel.setColour(juce::Slider::thumbColourId, juce::Colours::red);
 
@@ -12,11 +15,17 @@ MainComponent::MainComponent()
     modelSelect.addListener(this);
     m_cboxMap.assign(NpRpcProto::EComboBoxId::Model, &modelSelect);
 
-    addAndMakeVisible(loadButton);
-    loadButton.setButtonText("Import Tone");
-    loadButton.setColour(juce::Label::textColourId, juce::Colours::black);
-    loadButton.addListener(this);
-    loadButton.setEnabled(false);
+    addAndMakeVisible(nextModelButton);
+    nextModelButton.setButtonText(">");
+    nextModelButton.setColour(juce::Label::textColourId, juce::Colours::black);
+    nextModelButton.addListener(this);
+    nextModelButton.setEnabled(true);
+
+    addAndMakeVisible(prevModelButton);
+    prevModelButton.setButtonText("<");
+    prevModelButton.setColour(juce::Label::textColourId, juce::Colours::black);
+    prevModelButton.addListener(this);
+    prevModelButton.setEnabled(true);
 
     addAndMakeVisible(irSelect);
     irSelect.setColour(juce::Label::textColourId, juce::Colours::black);
@@ -24,12 +33,17 @@ MainComponent::MainComponent()
     irSelect.addListener(this);
     m_cboxMap.assign(NpRpcProto::EComboBoxId::Ir, &irSelect);
 
-    addAndMakeVisible(loadIR);
-    loadIR.setButtonText("Import IR");
-    loadIR.setColour(juce::Label::textColourId, juce::Colours::black);
-    loadIR.addListener(this);
-    loadIR.setEnabled(false);
+    addAndMakeVisible(nextIrButton);
+    nextIrButton.setColour(juce::Label::textColourId, juce::Colours::black);
+    nextIrButton.addListener(this);
+    nextIrButton.setButtonText(">");
+    nextIrButton.setEnabled(true);
 
+    addAndMakeVisible(prevIrButton);
+    prevIrButton.setButtonText("<");
+    prevIrButton.setColour(juce::Label::textColourId, juce::Colours::black);
+    prevIrButton.addListener(this);
+    prevIrButton.setEnabled(true);
     // Toggle IR
     //addAndMakeVisible(irButton); // Toggle is for testing purposes
     irButton.setToggleState(true, juce::NotificationType::dontSendNotification);
@@ -42,60 +56,94 @@ MainComponent::MainComponent()
   
 
     initKnobSlider(ampGainKnob, constDefSliderVal, this);
+//    ampGainKnob.onValueChange = [this] {
+//        m_updateKnobCounter.set(m_updateKnobCounter.get() + 1);
+//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Gain),
+//                           static_cast<float>(ampGainKnob.getValue()));
+//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Gain, &ampGainKnob);
 
+
     initKnobSlider(ampMasterKnob, constDefSliderVal, this);
+//    ampMasterKnob.onValueChange = [this] {
+//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Master),
+//                           static_cast<float>(ampMasterKnob.getValue()));
+//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Master, &ampMasterKnob);
 
     initKnobSlider(ampDelayKnob, constDefSliderVal, this);
+//    ampDelayKnob.onValueChange = [this] {
+//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Delay),
+//                           static_cast<float>(ampDelayKnob.getValue()));
+//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Delay, &ampDelayKnob);
 
     initKnobSlider(ampReverbKnob, constDefSliderVal, this);
+//    ampReverbKnob.onValueChange = [this] {
+//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Reverb),
+//                           static_cast<float>(ampReverbKnob.getValue()));
+//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Reverb, &ampReverbKnob);
 
     initKnobSlider(ampBassKnob, constDefSliderVal, this);
+//    ampBassKnob.onValueChange = [this] {
+//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Bass),
+//                           static_cast<float>(ampBassKnob.getValue()));
+//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Bass, &ampBassKnob);
 
     initKnobSlider(ampMidKnob, constDefSliderVal, this);
+//    ampMidKnob.onValueChange = [this] {
+//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Mid),
+//                           static_cast<float>(ampMidKnob.getValue()));
+//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Mid, &ampMidKnob);
 
     initKnobSlider(ampTrebleKnob, constDefSliderVal, this);
+//    ampTrebleKnob.onValueChange = [this] {
+//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Treble),
+//                           static_cast<float>(ampTrebleKnob.getValue()));
+//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Treble, &ampTrebleKnob);
 
     initKnobSlider(ampPresenceKnob, constDefSliderVal, this);
+//    ampPresenceKnob.onValueChange = [this] {
+//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Presence),
+//                           static_cast<float>(ampPresenceKnob.getValue()));
+//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Presence, &ampPresenceKnob);
 
     addAndMakeVisible(GainLabel);
     GainLabel.setText("Gain", juce::NotificationType::dontSendNotification);
-    GainLabel.setJustificationType(juce::Justification::centred);
+    GainLabel.setJustificationType(juce::Justification::centredBottom);
 
     addAndMakeVisible(LevelLabel);
     LevelLabel.setText("Level", juce::NotificationType::dontSendNotification);
-    LevelLabel.setJustificationType(juce::Justification::centred);
+    LevelLabel.setJustificationType(juce::Justification::centredBottom);
 
     addAndMakeVisible(BassLabel);
     BassLabel.setText("Bass", juce::NotificationType::dontSendNotification);
-    BassLabel.setJustificationType(juce::Justification::centred);
+    BassLabel.setJustificationType(juce::Justification::centredBottom);
 
     addAndMakeVisible(MidLabel);
     MidLabel.setText("Mid", juce::NotificationType::dontSendNotification);
-    MidLabel.setJustificationType(juce::Justification::centred);
+    MidLabel.setJustificationType(juce::Justification::centredBottom);
 
     addAndMakeVisible(TrebleLabel);
     TrebleLabel.setText("Treble", juce::NotificationType::dontSendNotification);
-    TrebleLabel.setJustificationType(juce::Justification::centred);
+    TrebleLabel.setJustificationType(juce::Justification::centredBottom);
 
     addAndMakeVisible(PresenceLabel);
     PresenceLabel.setText("Presence", juce::NotificationType::dontSendNotification);
-    PresenceLabel.setJustificationType(juce::Justification::centred);
+    PresenceLabel.setJustificationType(juce::Justification::centredBottom);
 
     addAndMakeVisible(DelayLabel);
     DelayLabel.setText("Delay", juce::NotificationType::dontSendNotification);
-    DelayLabel.setJustificationType(juce::Justification::centred);
+    DelayLabel.setJustificationType(juce::Justification::centredBottom);
 
     addAndMakeVisible(ReverbLabel);
     ReverbLabel.setText("Reverb", juce::NotificationType::dontSendNotification);
-    ReverbLabel.setJustificationType(juce::Justification::centred);
+    ReverbLabel.setJustificationType(juce::Justification::centredBottom);
 
     addAndMakeVisible(toneDropDownLabel);
     toneDropDownLabel.setText("Tone", juce::NotificationType::dontSendNotification);
@@ -146,17 +194,37 @@ MainComponent::MainComponent()
     ipCbox.setColour(juce::Label::textColourId, juce::Colours::black);
 
     // Size of plugin GUI
-    setSize(345, 455);
+#if JUCE_ANDROID
+    // Android-specific initialization
+    DBG("Running on Android!");
+    auto display = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
+    Rectangle<int> screenSize;
+    screenSize = display->userArea;
 
-    // Set gain knob color based on conditioned/snapshot model 
+    DBG("Android screen bounds: " << screenSize.toString());
+    // Option 1: Use full screen size
+    setSize(screenSize.getWidth(), screenSize.getHeight());
+#else
+    setSize(345, 455);
+#endif
+    setupIU();
+
+    startTimerHz(1);
+    // Set gain knob color based on conditioned/snapshot model
     //setParamKnobColor(processor.params);
 
     m_conn = std::make_unique<UdpSender>(NpRpcProto::NPRPC_CLN_PORT, NpRpcProto::NPRPC_MCAST_ADDR, *this);
+    //m_conn = std::make_unique<UdpSender>(24025, NpRpcProto::NPRPC_MCAST_ADDR, *this);
     m_conn->startThread();
 }
 
 MainComponent::~MainComponent()
 {
+    stopTimer();
+    m_conn->signalThreadShouldExit();
+    m_conn->stopThread(1000);
+
+    openGLContext.detach();
 }
 
 void MainComponent::initKnobSlider(juce::Slider& slider, float value, SliderListener* listener) {
@@ -179,63 +247,122 @@ void MainComponent::initKnobSlider(juce::Slider& slider, float value, SliderList
 }
 
 //==============================================================================
-void MainComponent::paint (Graphics& g)
+//void MainComponent::paint (Graphics& g)
+//{
+//    // Workaround for graphics on Windows builds (clipping code doesn't work correctly on Windows)
+//#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+//    g.drawImageAt(background, 0, 0);  // Debug Line: Redraw entire background image
+//#else
+//    // Redraw only the clipped part of the background image
+//    juce::Rectangle<int> ClipRect = g.getClipBounds();
+//    g.drawImage(background, ClipRect.getX(), ClipRect.getY(), ClipRect.getWidth(), ClipRect.getHeight(), ClipRect.getX(), ClipRect.getY(), ClipRect.getWidth(), ClipRect.getHeight());
+//#endif
+//}
+
+void MainComponent::resized() {
+    setupIU();
+}
+void MainComponent::setupIU()
 {
-    // Workaround for graphics on Windows builds (clipping code doesn't work correctly on Windows)
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    g.drawImageAt(background, 0, 0);  // Debug Line: Redraw entire background image
-#else
-// Redraw only the clipped part of the background image
-    juce::Rectangle<int> ClipRect = g.getClipBounds();
-    g.drawImage(background, ClipRect.getX(), ClipRect.getY(), ClipRect.getWidth(), ClipRect.getHeight(), ClipRect.getX(), ClipRect.getY(), ClipRect.getWidth(), ClipRect.getHeight());
-#endif
+    auto area = getLocalBounds().reduced(10); // Add some margin
+    const float dpi = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->dpi;
+    const float scale = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->scale;
+    const float mm =  dpi / 25.4f / scale ;
+    const int rowH = mm * 8.0f;
+    const int butW = mm * 8.0f;
+    const int lblH = mm * 4.0f;
+    const int spacing = mm / 2;
+    FlexItem::Margin lblMargin{mm * 2, 0.0, 0.0, 0.0};
+    FlexItem::Margin knobMargin{0.0, 0.0, mm * 2, 0.0};
+    const int knobH = area.getWidth() / 4;
+    // 1 cm in pixels
+
+    // === ROW 1: Model Select + Load Button ===
+    FlexBox row1;
+    row1.flexDirection = FlexBox::Direction::row;
+    row1.justifyContent = FlexBox::JustifyContent::center;
+    row1.items.add(FlexItem(prevModelButton).withWidth(butW).withMargin(spacing));
+    row1.items.add(FlexItem(modelSelect).withFlex(4).withMargin(spacing));
+    row1.items.add(FlexItem(nextModelButton).withWidth(butW).withMargin(spacing));
+
+    // === ROW 2: IR Select + Load IR + IR Button ===
+    FlexBox row2;
+    row2.flexDirection = FlexBox::Direction::row;
+    row2.justifyContent = FlexBox::JustifyContent::center;
+    row2.items.add(FlexItem(prevIrButton).withWidth(butW).withMargin(spacing));
+    row2.items.add(FlexItem(irSelect).withFlex(4).withMargin(spacing));
+    row2.items.add(FlexItem(nextIrButton).withWidth(butW).withMargin(spacing));
+
+    // === ROW 3: Top Knob Labels (Gain, Master, Delay, Reverb) ===
+    FlexBox labelRow1;
+    labelRow1.flexDirection = FlexBox::Direction::row;
+    labelRow1.justifyContent = FlexBox::JustifyContent::spaceBetween;
+    labelRow1.items.add(FlexItem(GainLabel).withFlex(1));
+    labelRow1.items.add(FlexItem(LevelLabel).withFlex(1));
+    labelRow1.items.add(FlexItem(DelayLabel).withFlex(1));
+    labelRow1.items.add(FlexItem(ReverbLabel).withFlex(1));
+
+    // === ROW 4: Top Knob Row (Gain, Master, Delay, Reverb) ===
+    FlexBox knobRow1;
+    knobRow1.flexDirection = FlexBox::Direction::row;
+    knobRow1.justifyContent = FlexBox::JustifyContent::spaceBetween;
+    knobRow1.items.add(FlexItem(ampGainKnob).withFlex(1));
+    knobRow1.items.add(FlexItem(ampMasterKnob).withFlex(1));
+    knobRow1.items.add(FlexItem(ampDelayKnob).withFlex(1));
+    knobRow1.items.add(FlexItem(ampReverbKnob).withFlex(1));
+
+    // === ROW 5: Bottom Knob Labels (Bass, Mid, Treble, Presence) ===
+    FlexBox labelRow2;
+    labelRow2.flexDirection = FlexBox::Direction::row;
+    labelRow2.justifyContent = FlexBox::JustifyContent::spaceBetween;
+    labelRow2.items.add(FlexItem(BassLabel).withFlex(1));
+    labelRow2.items.add(FlexItem(MidLabel).withFlex(1));
+    labelRow2.items.add(FlexItem(TrebleLabel).withFlex(1));
+    labelRow2.items.add(FlexItem(PresenceLabel).withFlex(1));
+
+    // === ROW 6: Bottom Knob Row (Bass, Mid, Treble, Presence) ===
+    FlexBox knobRow2;
+    knobRow2.flexDirection = FlexBox::Direction::row;
+    knobRow2.justifyContent = FlexBox::JustifyContent::spaceBetween;
+    knobRow2.items.add(FlexItem(ampBassKnob).withFlex(1));
+    knobRow2.items.add(FlexItem(ampMidKnob).withFlex(1));
+    knobRow2.items.add(FlexItem(ampTrebleKnob).withFlex(1));
+    knobRow2.items.add(FlexItem(ampPresenceKnob).withFlex(1));
+
+    // === ROW 7: Connection Area ===
+    FlexBox connectionRow;
+    connectionRow.flexDirection = FlexBox::Direction::row;
+    connectionRow.items.add(FlexItem(ipCbox).withFlex(3).withMargin(spacing));
+    connectionRow.items.add(FlexItem(scanButton).withFlex(1).withMargin(spacing));
+
+    // === ROW 8: Connect Button ===
+    FlexBox connectRow;
+    connectRow.items.add(FlexItem(connectButton).withFlex(1).withMargin(spacing));
+
+    // === OUTER FlexBox ===
+    FlexBox mainFlex;
+    mainFlex.flexDirection = FlexBox::Direction::column;
+
+    mainFlex.items.add(FlexItem().withHeight(lblH).withFlex(0).withMargin(spacing));
+    mainFlex.items.add(FlexItem(row1).withHeight(rowH));
+    mainFlex.items.add(FlexItem(row2).withHeight(rowH));
+    mainFlex.items.add(FlexItem(labelRow1).withHeight(lblH).withMargin(lblMargin));
+    mainFlex.items.add(FlexItem(knobRow1).withHeight(knobH).withMargin(knobMargin));
+    mainFlex.items.add(FlexItem(labelRow2).withHeight(lblH).withMargin(lblMargin));
+    mainFlex.items.add(FlexItem(knobRow2).withHeight(knobH).withMargin(knobMargin));
+    mainFlex.items.add(FlexItem(connectionRow).withHeight(rowH).withMargin(spacing));
+    mainFlex.items.add(FlexItem(connectRow).withHeight(rowH).withMargin(spacing));
+
+    mainFlex.performLayout(area.toFloat());
 }
 
-void MainComponent::resized()
-{
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
-    modelSelect.setBounds(11, 10, 270, 25);
-    loadButton.setBounds(11, 74, 100, 25);
 
-    irSelect.setBounds(11, 42, 270, 25);
-    loadIR.setBounds(120, 74, 100, 25);
-    irButton.setBounds(248, 42, 257, 25);
-    lstmButton.setBounds(248, 10, 257, 25);
 
-    // Amp Widgets
-    ampGainKnob.setBounds(10, 120, 75, 95);
-    ampMasterKnob.setBounds(95, 120, 75, 95);
-    ampBassKnob.setBounds(10, 250, 75, 95);
-    ampMidKnob.setBounds(95, 250, 75, 95);
-    ampTrebleKnob.setBounds(180, 250, 75, 95);
-    ampPresenceKnob.setBounds(265, 250, 75, 95);
-
-    ampDelayKnob.setBounds(180, 120, 75, 95);
-    ampReverbKnob.setBounds(265, 120, 75, 95);
-
-    GainLabel.setBounds(6, 108, 80, 10);
-    LevelLabel.setBounds(93, 108, 80, 10);
-    BassLabel.setBounds(6, 238, 80, 10);
-    MidLabel.setBounds(91, 238, 80, 10);
-    TrebleLabel.setBounds(178, 238, 80, 10);
-    PresenceLabel.setBounds(265, 238, 80, 10);
-    DelayLabel.setBounds(178, 108, 80, 10);
-    ReverbLabel.setBounds(265, 108, 80, 10);
-
-    toneDropDownLabel.setBounds(267, 16, 80, 10);
-    irDropDownLabel.setBounds(261, 48, 80, 10);
-    versionLabel.setBounds(268, 431, 80, 10);
-
-    addAndMakeVisible(ampNameLabel);
-    ampNameField.setEditable(true, true, true);
-    addAndMakeVisible(ampNameField);
-
-    ipCbox.setBounds(15, 365, 270, 25);
-    scanButton.setBounds(285, 365, 50, 25);
-
-    connectButton.setBounds(15, 395, 320, 25);
-
+void MainComponent::timerCallback() {
+    int counter = m_updateKnobCounter.get();
+    DBG("Update Knob counter: " << counter);
+    m_updateKnobCounter.set(0);
+    //repaint();
 }
 
 void MainComponent::buttonClicked(juce::Button* button)
@@ -250,6 +377,18 @@ void MainComponent::buttonClicked(juce::Button* button)
     }
     else if (button == &scanButton) {
         onScanClicked();
+    }
+    else if (button == &nextModelButton) {
+        setNextComboBoxItem(modelSelect);
+    }
+    else if (button == &prevModelButton) {
+        setPrevComboBoxItem(modelSelect);
+    }
+    else if (button == &nextIrButton) {
+        setNextComboBoxItem(irSelect);
+    }
+    else if (button == &prevIrButton) {
+        setPrevComboBoxItem(irSelect);
     }
 }
 
@@ -271,6 +410,7 @@ void MainComponent::onAbortClicker() {
 void MainComponent::sliderValueChanged(Slider* slider) {
     auto id = m_sliderMap.getId(slider);
     if (id != std::nullopt) {
+        m_updateKnobCounter.set(m_updateKnobCounter.get() + 1);
         m_conn->updateKnob(static_cast<int32_t>(id.value()), static_cast<float>(slider->getValue()));
     }
 }
@@ -279,6 +419,21 @@ void MainComponent::comboBoxChanged(ComboBox* cbox) {
     auto id = m_cboxMap.getId(cbox);
     if (id != std::nullopt) {
         m_conn->selectModel(static_cast<int32_t>(id.value()), cbox->getSelectedItemIndex());
+    }
+}
+
+void MainComponent::setNextComboBoxItem(ComboBox& cbox) {
+    if (cbox.getNumItems() > 1) {
+        int index = cbox.getSelectedItemIndex() + 1;
+        index = (index >= cbox.getNumItems())? 0 : index;
+        cbox.setSelectedItemIndex(index);
+    }
+}
+void MainComponent::setPrevComboBoxItem(ComboBox& cbox) {
+    if (cbox.getNumItems() > 1) {
+        int index = cbox.getSelectedItemIndex() - 1;
+        index = (index < 0)? cbox.getNumItems() - 1 : index;
+        cbox.setSelectedItemIndex(index);
     }
 }
 
@@ -360,10 +515,6 @@ void MainComponent::onBrReceived(const juce::String addr) {
     }
 }
 
-
-void MainComponent::timerCallback()
-{
-}
 
 void MainComponent::setParamKnobColor(int params)
 {

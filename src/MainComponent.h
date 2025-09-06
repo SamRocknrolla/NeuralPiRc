@@ -12,13 +12,13 @@ using namespace juce;
     your controls and content.
 */
 class MainComponent  : public Component
+                     , private juce::Timer
                      , public IUdpRcClientListener
                      //, private juce::AsyncUpdater
                      , private Button::Listener
                      , private Slider::Listener
                      , private ComboBox::Listener
                      //, private Value::Listener
-                     , private Timer
 {
 public:
     //==============================================================================
@@ -29,8 +29,10 @@ public:
     ~MainComponent() override;
 
     //==============================================================================
-    void paint (Graphics&) override;
+    void timerCallback() override;
+    //void paint (Graphics&) override;
     void resized() override;
+    void setupIU();
 
     String ampName{ "NeuralPiRc" };
 
@@ -46,22 +48,10 @@ public:
     const Identifier modelName{ "model" };
     const Identifier irName{ "ir" };
 
-
-//    std::function<void(int sliderIndex, float sliderValue)> getUpdateCallback();
-
-    // This function is called when data is received from the UDP thread.
-    //void postDataToUI()
-    //{
-    //    triggerAsyncUpdate();
-    //}
-
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
-    //NeuralPiAudioProcessor& processor;
-    //juce::Atomic<float> knobValues[EKnobId_MAX];  // Atomic floats for thread-safe updates
+    juce::OpenGLContext openGLContext;
 
-    Image background = ImageCache::getFromMemory(BinaryData::npi_background_jpg, BinaryData::npi_background_jpgSize);
+    //Image background = ImageCache::getFromMemory(BinaryData::npi_background_jpg, BinaryData::npi_background_jpgSize);
     juce::LookAndFeel_V4 blueLookAndFeel;
     juce::LookAndFeel_V4 redLookAndFeel;
 
@@ -101,8 +91,10 @@ private:
     Label versionLabel;
 
 
-    TextButton loadButton;
-    TextButton loadIR;
+    TextButton nextModelButton;
+    TextButton prevModelButton;
+    TextButton nextIrButton;
+    TextButton prevIrButton;
     ToggleButton irButton;
     ToggleButton lstmButton;
 
@@ -127,22 +119,18 @@ private:
     void onConnectClicker();
     void onAbortClicker();
     void onScanClicked();
-
-
-
-    Label& getOutConnectedLabel();
-    Label& getInConnectedLabel();
-
-    void timerCallback() override;
+    void setNextComboBoxItem(ComboBox& cbox);
+    void setPrevComboBoxItem(ComboBox& cbox);
 
     void setParamKnobColor(int params);
 
     // IUdpClientListener impl
-    virtual void updateKnob(int id, float value) override;
-    virtual void updateModelIndex(int id, int index) override;
-    virtual void addModelItem(int id, String itemValue, int itemIndex) override;
-    virtual void onStateChanged(IUdpRcListener::EState prevState, IUdpRcListener::EState state) override;
-    virtual void onBrReceived(const juce::String addr) override;
+    juce::Atomic<int> m_updateKnobCounter;
+    void updateKnob(int id, float value) override;
+    void updateModelIndex(int id, int index) override;
+    void addModelItem(int id, String itemValue, int itemIndex) override;
+    void onStateChanged(IUdpRcListener::EState prevState, IUdpRcListener::EState state) override;
+    void onBrReceived(const juce::String addr) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
