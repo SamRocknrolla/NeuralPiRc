@@ -8,8 +8,8 @@
 
 namespace BinaryData
 {
-    extern const char*   npi_background_jpg;
-    const int            npi_background_jpgSize = 47900;
+    extern const char*   npi_bg2_jpg;
+    const int            npi_bg2_jpgSize = 142161;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
     const int namedResourceListSize = 1;

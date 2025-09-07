@@ -14,11 +14,9 @@ using namespace juce;
 class MainComponent  : public Component
                      , private juce::Timer
                      , public IUdpRcClientListener
-                     //, private juce::AsyncUpdater
                      , private Button::Listener
                      , private Slider::Listener
                      , private ComboBox::Listener
-                     //, private Value::Listener
 {
 public:
     //==============================================================================
@@ -49,9 +47,11 @@ public:
     const Identifier irName{ "ir" };
 
 private:
+#if JUCE_ANDROID
     juce::OpenGLContext openGLContext;
+#endif
 
-    //Image background = ImageCache::getFromMemory(BinaryData::npi_background_jpg, BinaryData::npi_background_jpgSize);
+    Image background = ImageCache::getFromMemory(BinaryData::npi_bg2_jpg, BinaryData::npi_bg2_jpgSize);
     juce::LookAndFeel_V4 blueLookAndFeel;
     juce::LookAndFeel_V4 redLookAndFeel;
 
@@ -63,8 +63,6 @@ private:
 
     IdPtrMap<NpRpcProto::EComboBoxId, juce::ComboBox*, static_cast<int>(NpRpcProto::EComboBoxId::MAX)> m_cboxMap;
 
-    //ComboBox* modelCbox[static_cast<size_t>(EModelId::MAX)] = { &modelSelect, &irSelect};
-
     Slider ampGainKnob;
     Slider ampMasterKnob;
     Slider ampBassKnob;
@@ -75,8 +73,6 @@ private:
     Slider ampReverbKnob;
 
     IdPtrMap<NpRpcProto::ESliderId, juce::Slider*, static_cast<int>(NpRpcProto::ESliderId::MAX)> m_sliderMap;
-
-    void initKnobSlider(juce::Slider& slider, float value, SliderListener* listener);
 
     Label GainLabel;
     Label LevelLabel;
@@ -98,12 +94,6 @@ private:
     ToggleButton irButton;
     ToggleButton lstmButton;
 
-    void updateToggleState(juce::Button* button, juce::String name);
-
-    virtual void buttonClicked(Button* button) override;
-    virtual void sliderValueChanged(Slider* slider) override;
-    virtual void comboBoxChanged(ComboBox* cbox) override;
-
     Label ampNameLabel{ {}, "Amp Name (no spaces): " };
     Label ampNameField{ {}, "NeuralPi" };
 
@@ -116,16 +106,36 @@ private:
     TextButton scanButton;
     ComboBox ipCbox;
 
+private:
+    void paint(Graphics& g) override;
+    //====================================================================
+    // UI initialization
+    //====================================================================
+    void initKnobSlider(juce::Slider& slider, float value, SliderListener* listener);
+
+    //====================================================================
+    // UI events
+    //====================================================================
     void onConnectClicker();
     void onAbortClicker();
     void onScanClicked();
+
     void setNextComboBoxItem(ComboBox& cbox);
     void setPrevComboBoxItem(ComboBox& cbox);
 
     void setParamKnobColor(int params);
+    void updateToggleState(juce::Button* button, juce::String name);
 
-    // IUdpClientListener impl
-    juce::Atomic<int> m_updateKnobCounter;
+    //====================================================================
+    // Listeners
+    //====================================================================
+    void buttonClicked(Button* button) override;
+    void sliderValueChanged(Slider* slider) override;
+    void comboBoxChanged(ComboBox* cbox) override;
+
+    //====================================================================
+    // IUdpClientListener implementation
+    //====================================================================
     void updateKnob(int id, float value) override;
     void updateModelIndex(int id, int index) override;
     void addModelItem(int id, String itemValue, int itemIndex) override;

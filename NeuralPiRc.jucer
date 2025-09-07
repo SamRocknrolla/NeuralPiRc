@@ -4,8 +4,7 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="OZ1SRz" name="NeuralPiRc">
     <GROUP id="{B651BDC6-4D88-3102-26C5-E4D8EB538034}" name="Resources">
-      <FILE id="Vb4rw1" name="npi_background.jpg" compile="0" resource="1"
-            file="resources/npi_background.jpg"/>
+      <FILE id="HClcF5" name="npi_bg2.jpg" compile="0" resource="1" file="resources/npi_bg2.jpg"/>
     </GROUP>
     <GROUP id="{7BE8E43A-9129-ABE8-0D0F-209230AB7A2A}" name="src">
       <FILE id="je9EcL" name="UdpSender.h" compile="0" resource="0" file="src/UdpSender.h"/>

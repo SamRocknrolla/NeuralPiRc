@@ -2,9 +2,10 @@
 
 //==============================================================================
 MainComponent::MainComponent()
- : m_updateKnobCounter(0) 
 {
+#if JUCE_ANDROID
     openGLContext.attachTo(*this);
+#endif
     
     blueLookAndFeel.setColour(juce::Slider::thumbColourId, juce::Colours::aqua);
     redLookAndFeel.setColour(juce::Slider::thumbColourId, juce::Colours::red);
@@ -56,61 +57,28 @@ MainComponent::MainComponent()
   
 
     initKnobSlider(ampGainKnob, constDefSliderVal, this);
-//    ampGainKnob.onValueChange = [this] {
-//        m_updateKnobCounter.set(m_updateKnobCounter.get() + 1);
-//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Gain),
-//                           static_cast<float>(ampGainKnob.getValue()));
-//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Gain, &ampGainKnob);
 
 
     initKnobSlider(ampMasterKnob, constDefSliderVal, this);
-//    ampMasterKnob.onValueChange = [this] {
-//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Master),
-//                           static_cast<float>(ampMasterKnob.getValue()));
-//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Master, &ampMasterKnob);
 
     initKnobSlider(ampDelayKnob, constDefSliderVal, this);
-//    ampDelayKnob.onValueChange = [this] {
-//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Delay),
-//                           static_cast<float>(ampDelayKnob.getValue()));
-//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Delay, &ampDelayKnob);
 
     initKnobSlider(ampReverbKnob, constDefSliderVal, this);
-//    ampReverbKnob.onValueChange = [this] {
-//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Reverb),
-//                           static_cast<float>(ampReverbKnob.getValue()));
-//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Reverb, &ampReverbKnob);
 
     initKnobSlider(ampBassKnob, constDefSliderVal, this);
-//    ampBassKnob.onValueChange = [this] {
-//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Bass),
-//                           static_cast<float>(ampBassKnob.getValue()));
-//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Bass, &ampBassKnob);
 
     initKnobSlider(ampMidKnob, constDefSliderVal, this);
-//    ampMidKnob.onValueChange = [this] {
-//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Mid),
-//                           static_cast<float>(ampMidKnob.getValue()));
-//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Mid, &ampMidKnob);
 
     initKnobSlider(ampTrebleKnob, constDefSliderVal, this);
-//    ampTrebleKnob.onValueChange = [this] {
-//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Treble),
-//                           static_cast<float>(ampTrebleKnob.getValue()));
-//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Treble, &ampTrebleKnob);
 
     initKnobSlider(ampPresenceKnob, constDefSliderVal, this);
-//    ampPresenceKnob.onValueChange = [this] {
-//        m_conn->updateKnob(static_cast<int32_t>(NpRpcProto::ESliderId::Presence),
-//                           static_cast<float>(ampPresenceKnob.getValue()));
-//    };
     m_sliderMap.assign(NpRpcProto::ESliderId::Presence, &ampPresenceKnob);
 
     addAndMakeVisible(GainLabel);
@@ -195,26 +163,18 @@ MainComponent::MainComponent()
 
     // Size of plugin GUI
 #if JUCE_ANDROID
-    // Android-specific initialization
-    DBG("Running on Android!");
     auto display = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
-    Rectangle<int> screenSize;
-    screenSize = display->userArea;
-
-    DBG("Android screen bounds: " << screenSize.toString());
-    // Option 1: Use full screen size
+    Rectangle<int> screenSize = display->userArea;
     setSize(screenSize.getWidth(), screenSize.getHeight());
 #else
-    setSize(345, 455);
+    setSize(345, 380);
 #endif
     setupIU();
 
-    startTimerHz(1);
     // Set gain knob color based on conditioned/snapshot model
     //setParamKnobColor(processor.params);
 
     m_conn = std::make_unique<UdpSender>(NpRpcProto::NPRPC_CLN_PORT, NpRpcProto::NPRPC_MCAST_ADDR, *this);
-    //m_conn = std::make_unique<UdpSender>(24025, NpRpcProto::NPRPC_MCAST_ADDR, *this);
     m_conn->startThread();
 }
 
@@ -223,8 +183,9 @@ MainComponent::~MainComponent()
     stopTimer();
     m_conn->signalThreadShouldExit();
     m_conn->stopThread(1000);
-
+#if JUCE_ANDRIOD
     openGLContext.detach();
+#endif
 }
 
 void MainComponent::initKnobSlider(juce::Slider& slider, float value, SliderListener* listener) {
@@ -247,17 +208,17 @@ void MainComponent::initKnobSlider(juce::Slider& slider, float value, SliderList
 }
 
 //==============================================================================
-//void MainComponent::paint (Graphics& g)
-//{
-//    // Workaround for graphics on Windows builds (clipping code doesn't work correctly on Windows)
-//#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-//    g.drawImageAt(background, 0, 0);  // Debug Line: Redraw entire background image
-//#else
-//    // Redraw only the clipped part of the background image
-//    juce::Rectangle<int> ClipRect = g.getClipBounds();
-//    g.drawImage(background, ClipRect.getX(), ClipRect.getY(), ClipRect.getWidth(), ClipRect.getHeight(), ClipRect.getX(), ClipRect.getY(), ClipRect.getWidth(), ClipRect.getHeight());
-//#endif
-//}
+void MainComponent::paint (Graphics& g)
+{
+    // Workaround for graphics on Windows builds (clipping code doesn't work correctly on Windows)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    g.drawImageAt(background, 0, 0);  // Debug Line: Redraw entire background image
+#else
+    // Redraw only the clipped part of the background image
+    juce::Rectangle<int> ClipRect = g.getClipBounds();
+    g.drawImage(background, ClipRect.getX(), ClipRect.getY(), ClipRect.getWidth(), ClipRect.getHeight(), ClipRect.getX(), ClipRect.getY(), ClipRect.getWidth(), ClipRect.getHeight());
+#endif
+}
 
 void MainComponent::resized() {
     setupIU();
@@ -359,10 +320,6 @@ void MainComponent::setupIU()
 
 
 void MainComponent::timerCallback() {
-    int counter = m_updateKnobCounter.get();
-    DBG("Update Knob counter: " << counter);
-    m_updateKnobCounter.set(0);
-    //repaint();
 }
 
 void MainComponent::buttonClicked(juce::Button* button)
@@ -410,7 +367,6 @@ void MainComponent::onAbortClicker() {
 void MainComponent::sliderValueChanged(Slider* slider) {
     auto id = m_sliderMap.getId(slider);
     if (id != std::nullopt) {
-        m_updateKnobCounter.set(m_updateKnobCounter.get() + 1);
         m_conn->updateKnob(static_cast<int32_t>(id.value()), static_cast<float>(slider->getValue()));
     }
 }
