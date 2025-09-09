@@ -12,8 +12,8 @@ using namespace juce;
     your controls and content.
 */
 class MainComponent  : public Component
-                     , private juce::Timer
                      , public IUdpRcClientListener
+                     , private juce::Timer
                      , private Button::Listener
                      , private Slider::Listener
                      , private ComboBox::Listener
@@ -74,16 +74,19 @@ private:
 
     IdPtrMap<NpRpcProto::ESliderId, juce::Slider*, static_cast<int>(NpRpcProto::ESliderId::MAX)> m_sliderMap;
 
+    Label toneDropDownLabel;
+    Label irDropDownLabel;
+
     Label GainLabel;
     Label LevelLabel;
     Label BassLabel;
     Label MidLabel;
+
     Label TrebleLabel;
     Label PresenceLabel;
     Label DelayLabel;
     Label ReverbLabel;
-    Label toneDropDownLabel;
-    Label irDropDownLabel;
+
     Label versionLabel;
 
 

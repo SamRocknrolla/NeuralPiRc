@@ -59,7 +59,6 @@ MainComponent::MainComponent()
     initKnobSlider(ampGainKnob, constDefSliderVal, this);
     m_sliderMap.assign(NpRpcProto::ESliderId::Gain, &ampGainKnob);
 
-
     initKnobSlider(ampMasterKnob, constDefSliderVal, this);
     m_sliderMap.assign(NpRpcProto::ESliderId::Master, &ampMasterKnob);
 
@@ -80,6 +79,14 @@ MainComponent::MainComponent()
 
     initKnobSlider(ampPresenceKnob, constDefSliderVal, this);
     m_sliderMap.assign(NpRpcProto::ESliderId::Presence, &ampPresenceKnob);
+
+    addAndMakeVisible(toneDropDownLabel);
+    toneDropDownLabel.setText("Tone", juce::NotificationType::dontSendNotification);
+    toneDropDownLabel.setJustificationType(juce::Justification::centredBottom);
+
+    addAndMakeVisible(irDropDownLabel);
+    irDropDownLabel.setText("IR", juce::NotificationType::dontSendNotification);
+    irDropDownLabel.setJustificationType(juce::Justification::centredBottom);
 
     addAndMakeVisible(GainLabel);
     GainLabel.setText("Gain", juce::NotificationType::dontSendNotification);
@@ -113,14 +120,6 @@ MainComponent::MainComponent()
     ReverbLabel.setText("Reverb", juce::NotificationType::dontSendNotification);
     ReverbLabel.setJustificationType(juce::Justification::centredBottom);
 
-    addAndMakeVisible(toneDropDownLabel);
-    toneDropDownLabel.setText("Tone", juce::NotificationType::dontSendNotification);
-    toneDropDownLabel.setJustificationType(juce::Justification::centred);
-
-    addAndMakeVisible(irDropDownLabel);
-    irDropDownLabel.setText("IR", juce::NotificationType::dontSendNotification);
-    irDropDownLabel.setJustificationType(juce::Justification::centred);
-
     addAndMakeVisible(versionLabel);
     versionLabel.setText("v1.3.0", juce::NotificationType::dontSendNotification);
     versionLabel.setJustificationType(juce::Justification::centred);
@@ -128,6 +127,9 @@ MainComponent::MainComponent()
     auto font = GainLabel.getFont();
     float height = font.getHeight();
     font.setHeight(height); // 0.75);
+
+    toneDropDownLabel.setFont(font);
+    irDropDownLabel.setFont(font);
     GainLabel.setFont(font);
     LevelLabel.setFont(font);
     BassLabel.setFont(font);
@@ -136,8 +138,6 @@ MainComponent::MainComponent()
     PresenceLabel.setFont(font);
     DelayLabel.setFont(font);
     ReverbLabel.setFont(font);
-    toneDropDownLabel.setFont(font);
-    irDropDownLabel.setFont(font);
     versionLabel.setFont(font);
 
 
@@ -167,7 +167,7 @@ MainComponent::MainComponent()
     Rectangle<int> screenSize = display->userArea;
     setSize(screenSize.getWidth(), screenSize.getHeight());
 #else
-    setSize(345, 380);
+    setSize(346, 420);
 #endif
     setupIU();
 
@@ -183,6 +183,7 @@ MainComponent::~MainComponent()
     stopTimer();
     m_conn->signalThreadShouldExit();
     m_conn->stopThread(1000);
+    m_conn.reset(nullptr);
 #if JUCE_ANDRIOD
     openGLContext.detach();
 #endif
@@ -233,37 +234,50 @@ void MainComponent::setupIU()
     const int butW = mm * 8.0f;
     const int lblH = mm * 4.0f;
     const int spacing = mm / 2;
+
     FlexItem::Margin lblMargin{mm * 2, 0.0, 0.0, 0.0};
     FlexItem::Margin knobMargin{0.0, 0.0, mm * 2, 0.0};
     const int knobH = area.getWidth() / 4;
     // 1 cm in pixels
 
-    // === ROW 1: Model Select + Load Button ===
-    FlexBox row1;
-    row1.flexDirection = FlexBox::Direction::row;
-    row1.justifyContent = FlexBox::JustifyContent::center;
-    row1.items.add(FlexItem(prevModelButton).withWidth(butW).withMargin(spacing));
-    row1.items.add(FlexItem(modelSelect).withFlex(4).withMargin(spacing));
-    row1.items.add(FlexItem(nextModelButton).withWidth(butW).withMargin(spacing));
-
-    // === ROW 2: IR Select + Load IR + IR Button ===
-    FlexBox row2;
-    row2.flexDirection = FlexBox::Direction::row;
-    row2.justifyContent = FlexBox::JustifyContent::center;
-    row2.items.add(FlexItem(prevIrButton).withWidth(butW).withMargin(spacing));
-    row2.items.add(FlexItem(irSelect).withFlex(4).withMargin(spacing));
-    row2.items.add(FlexItem(nextIrButton).withWidth(butW).withMargin(spacing));
-
-    // === ROW 3: Top Knob Labels (Gain, Master, Delay, Reverb) ===
+    // === ROW 1: Label (Tone) ===
     FlexBox labelRow1;
     labelRow1.flexDirection = FlexBox::Direction::row;
     labelRow1.justifyContent = FlexBox::JustifyContent::spaceBetween;
-    labelRow1.items.add(FlexItem(GainLabel).withFlex(1));
-    labelRow1.items.add(FlexItem(LevelLabel).withFlex(1));
-    labelRow1.items.add(FlexItem(DelayLabel).withFlex(1));
-    labelRow1.items.add(FlexItem(ReverbLabel).withFlex(1));
+    labelRow1.items.add(FlexItem(toneDropDownLabel).withWidth(area.getWidth()).withFlex(1));
 
-    // === ROW 4: Top Knob Row (Gain, Master, Delay, Reverb) ===
+    // === ROW 2: Model Select + Load Button ===
+    FlexBox row1;
+    row1.flexDirection = FlexBox::Direction::row;
+    row1.justifyContent = FlexBox::JustifyContent::center;
+    row1.items.add(FlexItem(modelSelect).withFlex(4).withMargin(spacing));
+    row1.items.add(FlexItem(prevModelButton).withWidth(butW).withMargin(spacing));
+    row1.items.add(FlexItem(nextModelButton).withWidth(butW).withMargin(spacing));
+
+    // === ROW 3: Label (IR) ===
+    FlexBox labelRow2;
+    labelRow2.flexDirection = FlexBox::Direction::row;
+    labelRow2.justifyContent = FlexBox::JustifyContent::spaceBetween;
+    labelRow2.items.add(FlexItem(irDropDownLabel).withWidth(area.getWidth()).withFlex(1));
+
+    // === ROW 4: IR Select + Load IR + IR Button ===
+    FlexBox row2;
+    row2.flexDirection = FlexBox::Direction::row;
+    row2.justifyContent = FlexBox::JustifyContent::center;
+    row2.items.add(FlexItem(irSelect).withFlex(4).withMargin(spacing));
+    row2.items.add(FlexItem(prevIrButton).withWidth(butW).withMargin(spacing));
+    row2.items.add(FlexItem(nextIrButton).withWidth(butW).withMargin(spacing));
+
+    // === ROW 5: Top Knob Labels (Gain, Master, Delay, Reverb) ===
+    FlexBox labelRow3;
+    labelRow3.flexDirection = FlexBox::Direction::row;
+    labelRow3.justifyContent = FlexBox::JustifyContent::spaceBetween;
+    labelRow3.items.add(FlexItem(GainLabel).withFlex(1));
+    labelRow3.items.add(FlexItem(LevelLabel).withFlex(1));
+    labelRow3.items.add(FlexItem(DelayLabel).withFlex(1));
+    labelRow3.items.add(FlexItem(ReverbLabel).withFlex(1));
+
+    // === ROW 6: Top Knob Row (Gain, Master, Delay, Reverb) ===
     FlexBox knobRow1;
     knobRow1.flexDirection = FlexBox::Direction::row;
     knobRow1.justifyContent = FlexBox::JustifyContent::spaceBetween;
@@ -272,16 +286,16 @@ void MainComponent::setupIU()
     knobRow1.items.add(FlexItem(ampDelayKnob).withFlex(1));
     knobRow1.items.add(FlexItem(ampReverbKnob).withFlex(1));
 
-    // === ROW 5: Bottom Knob Labels (Bass, Mid, Treble, Presence) ===
-    FlexBox labelRow2;
-    labelRow2.flexDirection = FlexBox::Direction::row;
-    labelRow2.justifyContent = FlexBox::JustifyContent::spaceBetween;
-    labelRow2.items.add(FlexItem(BassLabel).withFlex(1));
-    labelRow2.items.add(FlexItem(MidLabel).withFlex(1));
-    labelRow2.items.add(FlexItem(TrebleLabel).withFlex(1));
-    labelRow2.items.add(FlexItem(PresenceLabel).withFlex(1));
+    // === ROW 7: Bottom Knob Labels (Bass, Mid, Treble, Presence) ===
+    FlexBox labelRow4;
+    labelRow4.flexDirection = FlexBox::Direction::row;
+    labelRow4.justifyContent = FlexBox::JustifyContent::spaceBetween;
+    labelRow4.items.add(FlexItem(BassLabel).withFlex(1));
+    labelRow4.items.add(FlexItem(MidLabel).withFlex(1));
+    labelRow4.items.add(FlexItem(TrebleLabel).withFlex(1));
+    labelRow4.items.add(FlexItem(PresenceLabel).withFlex(1));
 
-    // === ROW 6: Bottom Knob Row (Bass, Mid, Treble, Presence) ===
+    // === ROW 8: Bottom Knob Row (Bass, Mid, Treble, Presence) ===
     FlexBox knobRow2;
     knobRow2.flexDirection = FlexBox::Direction::row;
     knobRow2.justifyContent = FlexBox::JustifyContent::spaceBetween;
@@ -290,13 +304,13 @@ void MainComponent::setupIU()
     knobRow2.items.add(FlexItem(ampTrebleKnob).withFlex(1));
     knobRow2.items.add(FlexItem(ampPresenceKnob).withFlex(1));
 
-    // === ROW 7: Connection Area ===
+    // === ROW 9: Connection Area ===
     FlexBox connectionRow;
     connectionRow.flexDirection = FlexBox::Direction::row;
     connectionRow.items.add(FlexItem(ipCbox).withFlex(3).withMargin(spacing));
     connectionRow.items.add(FlexItem(scanButton).withFlex(1).withMargin(spacing));
 
-    // === ROW 8: Connect Button ===
+    // === ROW 10: Connect Button ===
     FlexBox connectRow;
     connectRow.items.add(FlexItem(connectButton).withFlex(1).withMargin(spacing));
 
@@ -305,11 +319,13 @@ void MainComponent::setupIU()
     mainFlex.flexDirection = FlexBox::Direction::column;
 
     mainFlex.items.add(FlexItem().withHeight(lblH).withFlex(0).withMargin(spacing));
-    mainFlex.items.add(FlexItem(row1).withHeight(rowH));
-    mainFlex.items.add(FlexItem(row2).withHeight(rowH));
     mainFlex.items.add(FlexItem(labelRow1).withHeight(lblH).withMargin(lblMargin));
-    mainFlex.items.add(FlexItem(knobRow1).withHeight(knobH).withMargin(knobMargin));
+    mainFlex.items.add(FlexItem(row1).withHeight(rowH));
     mainFlex.items.add(FlexItem(labelRow2).withHeight(lblH).withMargin(lblMargin));
+    mainFlex.items.add(FlexItem(row2).withHeight(rowH));
+    mainFlex.items.add(FlexItem(labelRow3).withHeight(lblH).withMargin(lblMargin));
+    mainFlex.items.add(FlexItem(knobRow1).withHeight(knobH).withMargin(knobMargin));
+    mainFlex.items.add(FlexItem(labelRow4).withHeight(lblH).withMargin(lblMargin));
     mainFlex.items.add(FlexItem(knobRow2).withHeight(knobH).withMargin(knobMargin));
     mainFlex.items.add(FlexItem(connectionRow).withHeight(rowH).withMargin(spacing));
     mainFlex.items.add(FlexItem(connectRow).withHeight(rowH).withMargin(spacing));
