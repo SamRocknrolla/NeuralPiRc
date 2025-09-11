@@ -429,6 +429,13 @@ void MainComponent::updateKnob(int id, float value) {
     }
 }
 
+void MainComponent::updateKnobColor(int id, uint32 value) {
+    Slider* slider = m_sliderMap.getPtr(static_cast<NpRpcProto::ESliderId>(id));
+    if (slider != nullptr) {
+        slider->setColour(juce::Slider::thumbColourId, juce::Colour{ value });
+    }
+}
+
 void MainComponent::updateModelIndex(int id, int index) {
     ComboBox* cbox = m_cboxMap.getPtr(static_cast<NpRpcProto::EComboBoxId>(id));
     if (cbox != nullptr) {

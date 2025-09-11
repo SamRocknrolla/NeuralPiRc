@@ -140,7 +140,9 @@ private:
     // IUdpClientListener implementation
     //====================================================================
     void updateKnob(int id, float value) override;
+    void updateKnobColor(int id, uint32 value) override;
     void updateModelIndex(int id, int index) override;
+
     void addModelItem(int id, String itemValue, int itemIndex) override;
     void onStateChanged(IUdpRcListener::EState prevState, IUdpRcListener::EState state) override;
     void onBrReceived(const juce::String addr) override;

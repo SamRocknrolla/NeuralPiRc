@@ -129,14 +129,24 @@ public:
                             // process OCR /NpRps/knob
                             else if (msg.getAddress() == NpRpcProto::NRPC_KNOB_CH &&
                                 _sessionId != NpRpcProto::NPRPC_INV_SESS_ID &&
-                                (m_sessionId == NpRpcProto::NPRPC_INV_SESS_ID || _sessionId == m_sessionId) &&
-                                _type == NpRpcProto::EPacketType::UpdateKnobMsg) {
+                                (m_sessionId == NpRpcProto::NPRPC_INV_SESS_ID || _sessionId == m_sessionId)) {
 
-                                //DBG("UpdateKnobMsg: id: " << msg[NpRpcProto::EUpdateKnobMsg_KnobId].getInt32() << " value: " << msg[NpRpcProto::EUpdateKnobMsg_KnobValue].getFloat32());
-                                juce::MessageManager::callAsync([&updater = m_listener, msg]() {
-                                    updater.updateKnob(msg[NpRpcProto::EUpdateKnobMsg_KnobId].getInt32(), 
-                                                       msg[NpRpcProto::EUpdateKnobMsg_KnobValue].getFloat32());
-                                    });
+                                switch (_type) {
+                                case NpRpcProto::EPacketType::UpdateKnobMsg:
+                                    juce::MessageManager::callAsync([&updater = m_listener, msg]() {
+                                        updater.updateKnob(msg[NpRpcProto::EUpdateKnobMsg_KnobId].getInt32(),
+                                            msg[NpRpcProto::EUpdateKnobMsg_KnobValue].getFloat32());
+                                        });
+                                    break;
+                                case NpRpcProto::EPacketType::UpdateKnobColorMsg:
+                                    juce::MessageManager::callAsync([&updater = m_listener, msg]() {
+                                        updater.updateKnobColor(msg[NpRpcProto::EUpdateKnobColorMsg_KnobId].getInt32(),
+                                            msg[NpRpcProto::EUpdateKnobColorMsg_KnobColor].getRGBA());
+                                        });
+                                    break;
+                                default:
+                                    break;
+                                }
                             }
                             // process OCR /NpRps/model
                             else if (msg.getAddress() == NpRpcProto::NRPC_MODEL_CH &&
